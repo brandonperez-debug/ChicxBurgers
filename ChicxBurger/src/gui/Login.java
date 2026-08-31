@@ -4,6 +4,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import main.Conexion.conexion;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Login extends JFrame {
 
@@ -1083,36 +1088,81 @@ public class Login extends JFrame {
     // LOGIN
     // ==========================================
 
-    private void iniciarSesion() {
+private void iniciarSesion() {
 
-        String usuario =
-                txtUsuario.getText().trim();
+    String usuario = txtUsuario.getText().trim();
+    String password = new String(txtPassword.getPassword());
 
-        String password =
-                new String(
-                        txtPassword.getPassword()
-                );
+    if (usuario.isEmpty() || password.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Debes ingresar usuario y contraseña.",
+                "Campos vacios",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
 
-        if (usuario.isEmpty()
-                || password.isEmpty()) {
+    String sql = "SELECT * FROM USUARIO WHERE usuario_login = ? AND contrasena = ? AND estado = 1";
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Debes ingresar usuario y contraseña.",
-                    "Campos vacios",
-                    JOptionPane.WARNING_MESSAGE
-            );
+    try (Connection con = conexion.getConnection()) {
 
+        if (con == null) {
             return;
         }
 
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, usuario);
+            ps.setString(2, password);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    String rol = rs.getString("rol");
+                    String nombreCompleto = rs.getString("nombre_completo");
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "¡Bienvenido a Chiksx Burger, " + nombreCompleto + "!",
+                            "Inicio de sesion",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                    dispose(); // cierra la ventana de login
+
+                    if (rol.equals("Administrador")) {
+                        new PaneldeAdmin();
+                    } else {
+                        // TODO: reemplazar por la ventana real del Cajero cuando la tengas
+                        JOptionPane.showMessageDialog(
+                                null,
+                                "Panel de Cajero aun no implementado.",
+                                "Aviso",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+                    }
+
+                } else {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Usuario o contraseña incorrectos.",
+                            "Error de acceso",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
         JOptionPane.showMessageDialog(
                 this,
-                "¡Bienvenido a Chiksx Burger, "
-                + usuario
-                + "!",
-                "Inicio de sesion",
-                JOptionPane.INFORMATION_MESSAGE
+                "Error al consultar la base de datos:\n" + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
         );
     }
+  }
 }

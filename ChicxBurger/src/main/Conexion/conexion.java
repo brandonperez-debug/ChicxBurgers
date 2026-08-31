@@ -10,7 +10,7 @@ import java.util.Properties;
 import javax.swing.JOptionPane;
 
 public class conexion {
-    private static final String url_default = "jdbc:MySQL://Localhost:3306/chicxburger";
+    private static final String url_default = "jdbc:mysql://localhost:3306/ChicxBurger";
     private static final String user_default = "root";
     private static final String password_default = "123456789";
 

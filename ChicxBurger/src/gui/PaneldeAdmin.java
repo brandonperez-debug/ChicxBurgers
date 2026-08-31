@@ -381,7 +381,7 @@ public class PaneldeAdmin extends JFrame {
         principal.add(contenido, BorderLayout.CENTER);
 
         // ==========================================
-        // AGREGAR TODO A LA VENTANA
+        //  AGREGAR A LA VENTANA
         // ==========================================
         add(menu, BorderLayout.WEST);
         add(principal, BorderLayout.CENTER);
