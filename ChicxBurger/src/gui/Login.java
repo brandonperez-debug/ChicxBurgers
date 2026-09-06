@@ -1,14 +1,14 @@
 package gui;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
-import main.Conexion.conexion;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import main.Conexion.conexion;
 
 public class Login extends JFrame {
 
@@ -26,6 +26,9 @@ public class Login extends JFrame {
     private JTextField txtUsuario;
     private JPasswordField txtPassword;
     private JCheckBox chkMostrar;
+
+    // Controla si el formulario esta en modo Login o modo Registro
+    private boolean modoRegistro = false;
 
     public Login() {
 
@@ -809,7 +812,13 @@ public class Login extends JFrame {
         );
 
         btnIngresar.addActionListener(
-                e -> iniciarSesion()
+                e -> {
+                    if (modoRegistro) {
+                        crearCuenta();
+                    } else {
+                        iniciarSesion();
+                    }
+                }
         );
 
         panelDerecho.add(
@@ -880,6 +889,60 @@ public class Login extends JFrame {
 
         panelDerecho.add(
                 lblRegistro
+        );
+
+        // ==========================================
+        // CLIC EN "REGISTRATE AQUI" / "INICIA SESION AQUI"
+        // ==========================================
+
+        lblRegistro.setCursor(
+                new Cursor(Cursor.HAND_CURSOR)
+        );
+
+        lblRegistro.addMouseListener(
+                new MouseAdapter() {
+
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+
+                        modoRegistro = !modoRegistro;
+
+                        if (modoRegistro) {
+
+                            lblBienvenido.setText("¡CREA TU CUENTA!");
+                            lblSubtitulo.setText("Registrate para continuar");
+                            lblUsuario.setText("CORREO");
+                            lblPassword.setText("CONTRASEÑA");
+                            btnIngresar.setText("CREAR CUENTA");
+                            lblCuenta.setText("¿Ya tienes una cuenta?");
+                            lblRegistro.setText("Inicia sesion aqui");
+
+                        } else {
+
+                            lblBienvenido.setText("¡BIENVENIDO!");
+                            lblSubtitulo.setText("Inicia sesion para continuar");
+                            lblUsuario.setText("USUARIO");
+                            lblPassword.setText("CONTRASEÑA");
+                            btnIngresar.setText("INGRESAR");
+                            lblCuenta.setText("¿No tienes una cuenta?");
+                            lblRegistro.setText("Registrate aqui");
+                        }
+
+                        // Limpiamos los campos al cambiar de modo
+                        txtUsuario.setText("");
+                        txtPassword.setText("");
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        lblRegistro.setForeground(NARANJA);
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        lblRegistro.setForeground(DORADO);
+                    }
+                }
         );
 
         // ==========================================
@@ -1135,13 +1198,7 @@ private void iniciarSesion() {
                     if (rol.equals("Administrador")) {
                         new PaneldeAdmin();
                     } else {
-                        // TODO: reemplazar por la ventana real del Cajero cuando la tengas
-                        JOptionPane.showMessageDialog(
-                                null,
-                                "Panel de Cajero aun no implementado.",
-                                "Aviso",
-                                JOptionPane.INFORMATION_MESSAGE
-                        );
+                        new ChiksxBurgerMenu().setVisible(true);
                     }
 
                 } else {
@@ -1165,4 +1222,122 @@ private void iniciarSesion() {
         );
     }
   }
+
+    // ==========================================
+    // REGISTRO (CREAR CUENTA)
+    // ==========================================
+
+    /**
+     * Expresion regular simple para validar un correo electronico
+     * (algo@algo.algo).
+     */
+    private static final String PATRON_CORREO =
+            "^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$";
+
+    private void crearCuenta() {
+
+        String correo = txtUsuario.getText().trim();
+        String password = new String(txtPassword.getPassword());
+
+        if (correo.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Debes ingresar correo y contraseña.",
+                    "Campos vacios",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (!correo.matches(PATRON_CORREO)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Ingresa un correo electronico valido.\nEjemplo: nombre@dominio.com",
+                    "Correo invalido",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (password.length() < 6) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "La contraseña debe tener al menos 6 caracteres.",
+                    "Contraseña invalida",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String sqlExiste = "SELECT id_usuario FROM USUARIO WHERE usuario_login = ?";
+        String sqlInsertar = "INSERT INTO USUARIO (nombre_completo, usuario_login, contrasena, rol, estado) " +
+                              "VALUES (?, ?, ?, ?, 1)";
+
+        try (Connection con = conexion.getConnection()) {
+
+            if (con == null) {
+                return;
+            }
+
+            // 1) Verificar que el correo no este registrado ya
+            try (PreparedStatement psExiste = con.prepareStatement(sqlExiste)) {
+
+                psExiste.setString(1, correo);
+
+                try (ResultSet rs = psExiste.executeQuery()) {
+                    if (rs.next()) {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Ya existe una cuenta con ese correo.",
+                                "Correo en uso",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+                }
+            }
+
+            // 2) Insertar el nuevo usuario
+            try (PreparedStatement psInsertar = con.prepareStatement(sqlInsertar)) {
+
+                psInsertar.setString(1, correo);   // nombre_completo (usamos el correo)
+                psInsertar.setString(2, correo);   // usuario_login
+                psInsertar.setString(3, password); // contrasena
+                psInsertar.setString(4, "Cajero"); // rol por defecto
+
+                int filas = psInsertar.executeUpdate();
+
+                if (filas == 1) {
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "¡Cuenta creada correctamente!",
+                            "Registro exitoso",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                    dispose(); // cierra la ventana de login/registro
+
+                    new ChiksxBurgerMenu().setVisible(true);
+
+                } else {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "No se pudo crear la cuenta.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error al crear la cuenta:\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
 }
