@@ -189,4 +189,5 @@ CREATE TABLE DETALLE_VENTA (
 -- ============================================================
  
 INSERT INTO USUARIO (nombre_completo, usuario_login, contrasena, rol, estado) VALUES
-('Anthony Perez', 'admin1', '123456', 'Administrador', 1);
+('Anthony Perez', 'admin1', '123456', 'Administrador', 1),
+('Brandon Perez', 'cajero1', '123456', 'Cajero', 2);

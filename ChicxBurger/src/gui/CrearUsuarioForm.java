@@ -1,6 +1,6 @@
 package gui;
 
-import dao.UsuarioDAO;
+import ChicxBurgerDB.UsuarioDAO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -30,7 +30,7 @@ public class CrearUsuarioForm extends JFrame {
         setLocationRelativeTo(null);
 
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(ChiksxBurgerMenu.CREAM);
+        root.setBackground(Chiksxburgermenu.CREAM);
         root.add(buildHeader(), BorderLayout.NORTH);
         root.add(buildForm(), BorderLayout.CENTER);
         setContentPane(root);
@@ -39,19 +39,19 @@ public class CrearUsuarioForm extends JFrame {
     private JPanel buildHeader() {
         JPanel header = new JPanel();
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBackground(ChiksxBurgerMenu.MAROON);
+        header.setBackground(Chiksxburgermenu.MAROON);
         header.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 4, 0, ChiksxBurgerMenu.GOLD),
+                BorderFactory.createMatteBorder(0, 0, 4, 0, Chiksxburgermenu.GOLD),
                 new EmptyBorder(26, 28, 22, 28)));
 
         JLabel title = new JLabel("Crear usuario");
         title.setFont(new Font("SansSerif", Font.BOLD, 24));
-        title.setForeground(ChiksxBurgerMenu.CREAM);
+        title.setForeground(Chiksxburgermenu.CREAM);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel subtitle = new JLabel("Registra un nuevo empleado (Administrador o Cajero)");
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        subtitle.setForeground(ChiksxBurgerMenu.GOLD);
+        subtitle.setForeground(Chiksxburgermenu.GOLD);
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         subtitle.setBorder(new EmptyBorder(4, 0, 0, 0));
 
@@ -62,11 +62,11 @@ public class CrearUsuarioForm extends JFrame {
 
     private JPanel buildForm() {
         JPanel wrap = new JPanel(new BorderLayout());
-        wrap.setBackground(ChiksxBurgerMenu.CREAM);
+        wrap.setBackground(Chiksxburgermenu.CREAM);
         wrap.setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        ChiksxBurgerMenu.RoundedPanel card = new ChiksxBurgerMenu.RoundedPanel(
-                18, Color.WHITE, ChiksxBurgerMenu.CREAM_2);
+        Chiksxburgermenu.RoundedPanel card = new Chiksxburgermenu.RoundedPanel(
+                18, Color.WHITE, Chiksxburgermenu.CREAM_2);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(26, 26, 26, 26));
 
@@ -94,7 +94,7 @@ public class CrearUsuarioForm extends JFrame {
 
         JLabel lbl = new JLabel(etiqueta);
         lbl.setFont(new Font("SansSerif", Font.BOLD, 12));
-        lbl.setForeground(ChiksxBurgerMenu.INK_SOFT);
+        lbl.setForeground(Chiksxburgermenu.INK_SOFT);
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         lbl.setBorder(new EmptyBorder(0, 0, 5, 0));
 
@@ -103,7 +103,7 @@ public class CrearUsuarioForm extends JFrame {
         input.setFont(new Font("SansSerif", Font.PLAIN, 14));
         if (input instanceof JTextField || input instanceof JPasswordField) {
             ((JComponent) input).setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(ChiksxBurgerMenu.CREAM_2, 1, true),
+                    BorderFactory.createLineBorder(Chiksxburgermenu.CREAM_2, 1, true),
                     new EmptyBorder(6, 10, 6, 10)));
         }
 
@@ -119,11 +119,11 @@ public class CrearUsuarioForm extends JFrame {
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
         JButton btnCancelar = new JButton("Cancelar");
-        estilizarBoton(btnCancelar, ChiksxBurgerMenu.CREAM_2, ChiksxBurgerMenu.BROWN_950);
+        estilizarBoton(btnCancelar, Chiksxburgermenu.CREAM_2, Chiksxburgermenu.BROWN_950);
         btnCancelar.addActionListener(e -> dispose());
 
         JButton btnCrear = new JButton("Crear usuario");
-        estilizarBoton(btnCrear, ChiksxBurgerMenu.RED, Color.WHITE);
+        estilizarBoton(btnCrear, Chiksxburgermenu.RED, Color.WHITE);
         btnCrear.addActionListener(e -> crearUsuario());
 
         p.add(btnCancelar);
@@ -188,7 +188,7 @@ public class CrearUsuarioForm extends JFrame {
 
     /** Abre el menu principal de Chiksx Burger y cierra este formulario. */
     private void abrirMenuYCerrar() {
-        SwingUtilities.invokeLater(() -> new ChiksxBurgerMenu().setVisible(true));
+        SwingUtilities.invokeLater(() -> new Chiksxburgermenu().setVisible(true));
         dispose();
     }
 

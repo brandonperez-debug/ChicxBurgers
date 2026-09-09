@@ -17,7 +17,7 @@ import javax.swing.border.EmptyBorder;
 
 // pantalla del menu, ya casi la termino jaja
 // intente que se pareciera al de mcdonalds pero con los colores de nosotros
-public class ChiksxBurgerMenu extends JFrame {
+public class Chiksxburgermenu extends JFrame {
 
     // colores de la marca, no muevan esto porfa
     static final Color BROWN_950 = new Color(0x3A, 0x18, 0x10);
@@ -59,7 +59,7 @@ public class ChiksxBurgerMenu extends JFrame {
         "Sin lechuga", "Sin tomate", "Sin cebolla", "Sin queso", "Sin salsa especial", "Sin carne/pollo"
     };
 
-    public ChiksxBurgerMenu() {
+    public Chiksxburgermenu() {
         setTitle("ChicxBurger - Menu");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // lo de Toolkit no me agarraba bien toda la pantalla, con esto le
@@ -1197,7 +1197,7 @@ public class ChiksxBurgerMenu extends JFrame {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception ignored) { }
-            new ChiksxBurgerMenu().setVisible(true);
+            new Chiksxburgermenu().setVisible(true);
         });
     }
 }

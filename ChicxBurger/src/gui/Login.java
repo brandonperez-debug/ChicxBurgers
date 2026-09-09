@@ -1198,7 +1198,7 @@ private void iniciarSesion() {
                     if (rol.equals("Administrador")) {
                         new PaneldeAdmin();
                     } else {
-                        new ChiksxBurgerMenu().setVisible(true);
+                        new Chiksxburgermenu().setVisible(true);
                     }
 
                 } else {
@@ -1318,7 +1318,7 @@ private void iniciarSesion() {
 
                     dispose(); // cierra la ventana de login/registro
 
-                    new ChiksxBurgerMenu().setVisible(true);
+                    new Chiksxburgermenu().setVisible(true);
 
                 } else {
                     JOptionPane.showMessageDialog(
