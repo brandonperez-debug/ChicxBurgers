@@ -187,10 +187,16 @@ public class CrearUsuarioForm extends JFrame {
     }
 
     /** Abre el menu principal de Chiksx Burger y cierra este formulario. */
-    private void abrirMenuYCerrar() {
+private void abrirMenuYCerrar() {
+    try {
+        int idUsuario = usuarioDAO.obtenerIdPorLogin(txtUsuario.getText().trim());
+        SwingUtilities.invokeLater(() -> new Chiksxburgermenu(idUsuario).setVisible(true));
+    } catch (SQLException ex) {
+        // si algo falla al recuperar el id, abrimos el menu igual con el valor por defecto
         SwingUtilities.invokeLater(() -> new Chiksxburgermenu().setVisible(true));
-        dispose();
     }
+    dispose();
+}
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

@@ -1195,11 +1195,13 @@ private void iniciarSesion() {
 
                     dispose(); // cierra la ventana de login
 
-                    if (rol.equals("Administrador")) {
+                    int idUsuario = rs.getInt("id_usuario");
+
+                        if (rol.equals("Administrador")) {
                         new PaneldeAdmin();
-                    } else {
-                        new Chiksxburgermenu().setVisible(true);
-                    }
+                        } else {
+                        new Chiksxburgermenu(idUsuario).setVisible(true);
+                        }
 
                 } else {
                     JOptionPane.showMessageDialog(

@@ -14,6 +14,10 @@ import java.util.Random;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import ChicxBurgerDB.ProductoDAO;
+import main.Conexion.conexion;
+import java.sql.*;
+import java.util.HashMap;
 
 // pantalla del menu, ya casi la termino jaja
 // intente que se pareciera al de mcdonalds pero con los colores de nosotros
@@ -54,12 +58,25 @@ public class Chiksxburgermenu extends JFrame {
 
     // aqui guardo lo que va llevando el cliente
     private final List<ItemPedido> carrito = new ArrayList<>();
+    private final int idUsuarioActual;
+    private final ProductoDAO productoDAO = new ProductoDAO();
+    private final HashMap<String, Integer> metodosPagoMap = new HashMap<>();
+
+    // TODO: igual que en GestionPedidos, esto deberia venir de un TURNO
+    // abierto real. Debe existir una fila en TURNO con este id.
+    private static final int ID_TURNO_ACTUAL = 1;
     private static final double EXTRA_COMBO = 18.0;
     private static final String[] OPCIONES_PERSONALIZACION = {
         "Sin lechuga", "Sin tomate", "Sin cebolla", "Sin queso", "Sin salsa especial", "Sin carne/pollo"
     };
 
     public Chiksxburgermenu() {
+        this(1);
+}
+
+    public Chiksxburgermenu(int idUsuarioActual) {
+        this.idUsuarioActual = idUsuarioActual;
+        cargarMetodosPago();
         setTitle("ChicxBurger - Menu");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // lo de Toolkit no me agarraba bien toda la pantalla, con esto le
@@ -104,6 +121,111 @@ public class Chiksxburgermenu extends JFrame {
         scroll.repaint();
         SwingUtilities.invokeLater(() -> scroll.getVerticalScrollBar().setValue(0));
     }
+
+    private void cargarMetodosPago() {
+    String sql = "SELECT id_metodo_pago, nombre_metodo FROM METODO_PAGO";
+    try (Connection con = conexion.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            metodosPagoMap.put(rs.getString("nombre_metodo"), rs.getInt("id_metodo_pago"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error al cargar metodos de pago: " + e.getMessage());
+    }
+}
+   
+private void registrarVenta(String metodoPagoSeleccionado) {
+
+    if (carrito.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Tu carrito esta vacio.");
+        return;
+    }
+
+    if (metodoPagoSeleccionado == null || !metodosPagoMap.containsKey(metodoPagoSeleccionado)) {
+        JOptionPane.showMessageDialog(this, "Selecciona un metodo de pago valido.");
+        return;
+    }
+    int idMetodoPago = metodosPagoMap.get(metodoPagoSeleccionado);
+
+    double total = 0;
+    for (ItemPedido item : carrito) {
+        total += item.precio;
+    }
+
+    Connection con = null;
+
+    try {
+        con = conexion.getConnection();
+        con.setAutoCommit(false);
+
+        String sqlVenta = "INSERT INTO VENTA (total, descuento_total, id_usuario, id_metodo_pago, id_turno) "
+                + "VALUES (?, 0, ?, ?, ?)";
+
+        int idVentaGenerado;
+
+        try (PreparedStatement psVenta = con.prepareStatement(sqlVenta, Statement.RETURN_GENERATED_KEYS)) {
+            psVenta.setDouble(1, total);
+            psVenta.setInt(2, idUsuarioActual);
+            psVenta.setInt(3, idMetodoPago);
+            psVenta.setInt(4, ID_TURNO_ACTUAL);
+            psVenta.executeUpdate();
+
+            try (ResultSet keys = psVenta.getGeneratedKeys()) {
+                if (keys.next()) {
+                    idVentaGenerado = keys.getInt(1);
+                } else {
+                    throw new SQLException("No se pudo obtener el id de la venta generada.");
+                }
+            }
+        }
+
+        String sqlDetalle = "INSERT INTO DETALLE_VENTA (id_venta, id_producto, cantidad, precio_unitario, subtotal) "
+                + "VALUES (?, ?, 1, ?, ?)";
+
+        try (PreparedStatement psDetalle = con.prepareStatement(sqlDetalle)) {
+            for (ItemPedido item : carrito) {
+                // obtiene o crea el producto real detras del nombre tematico
+                int idProducto = productoDAO.obtenerOCrearProductoPorNombre(item.nombreProducto, item.precio);
+
+                psDetalle.setInt(1, idVentaGenerado);
+                psDetalle.setInt(2, idProducto);
+                psDetalle.setDouble(3, item.precio);
+                psDetalle.setDouble(4, item.precio);
+                psDetalle.addBatch();
+            }
+            psDetalle.executeBatch();
+        }
+
+        con.commit();
+
+        JOptionPane.showMessageDialog(this, "Pedido confirmado. No. de orden: " + idVentaGenerado);
+
+        carrito.clear();
+        actualizarContadorCarrito();
+        irACarrito();
+
+    } catch (SQLException e) {
+        if (con != null) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                // si ni siquiera se puede revertir, solo lo mostramos abajo
+            }
+        }
+        JOptionPane.showMessageDialog(this, "Error al confirmar el pedido: " + e.getMessage());
+
+    } finally {
+        if (con != null) {
+            try {
+                con.setAutoCommit(true);
+                con.close();
+            } catch (SQLException ex) {
+                // conexion ya cerrada o invalida
+            }
+        }
+    }
+}
 
     private void mostrarCategoriaEnScroll() {
         scroll.setViewportView(categoriaContenedor);
@@ -932,61 +1054,96 @@ public class Chiksxburgermenu extends JFrame {
     }
 
     // pantalla del carrito, aca se ve todo lo que a agregado el cliente
-    private void irACarrito() {
-        categoriaContenedor.removeAll();
+   private void irACarrito() {
+    categoriaContenedor.removeAll();
 
-        categoriaContenedor.add(buildBreadcrumb("Carrito"));
-        categoriaContenedor.add(buildTituloCategoria("Tu Carrito"));
+    categoriaContenedor.add(buildBreadcrumb("Carrito"));
+    categoriaContenedor.add(buildTituloCategoria("Tu Carrito"));
 
-        if (carrito.isEmpty()) {
-            JLabel vacio = new JLabel("Aun no has agregado productos a tu carrito.");
-            vacio.setFont(FONT_SUB);
-            vacio.setForeground(INK_SOFT);
-            vacio.setBorder(new EmptyBorder(0, 32, 20, 32));
-            vacio.setAlignmentX(Component.LEFT_ALIGNMENT);
-            categoriaContenedor.add(vacio);
-        } else {
-            JPanel lista = new JPanel();
-            lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-            lista.setOpaque(false);
-            lista.setBorder(new EmptyBorder(0, 32, 10, 32));
-            lista.setAlignmentX(Component.LEFT_ALIGNMENT);
+    if (carrito.isEmpty()) {
+        JLabel vacio = new JLabel("Aun no has agregado productos a tu carrito.");
+        vacio.setFont(FONT_SUB);
+        vacio.setForeground(INK_SOFT);
+        vacio.setBorder(new EmptyBorder(0, 32, 20, 32));
+        vacio.setAlignmentX(Component.LEFT_ALIGNMENT);
+        categoriaContenedor.add(vacio);
+    } else {
+        JPanel lista = new JPanel();
+        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
+        lista.setOpaque(false);
+        lista.setBorder(new EmptyBorder(0, 32, 10, 32));
+        lista.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            double total = 0;
-            for (ItemPedido item : new ArrayList<>(carrito)) {
-                JPanel fila = buildFilaCarrito(item);
-                fila.setAlignmentX(Component.LEFT_ALIGNMENT);
-                lista.add(fila);
-                lista.add(Box.createVerticalStrut(12));
-                total += item.precio;
-            }
-            categoriaContenedor.add(lista);
-
-            JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            totalPanel.setOpaque(false);
-            totalPanel.setBorder(new EmptyBorder(6, 32, 20, 32));
-            totalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            JLabel lblTotal = new JLabel("Total: " + formatoPrecio(total));
-            lblTotal.setFont(new Font("SansSerif", Font.BOLD, 22));
-            lblTotal.setForeground(BROWN_950);
-            totalPanel.add(lblTotal);
-            categoriaContenedor.add(totalPanel);
+        double total = 0;
+        for (ItemPedido item : new ArrayList<>(carrito)) {
+            JPanel fila = buildFilaCarrito(item);
+            fila.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lista.add(fila);
+            lista.add(Box.createVerticalStrut(12));
+            total += item.precio;
         }
+        categoriaContenedor.add(lista);
 
-        JButton btnSeguir = new BotonAmbar("Seguir comprando");
-        btnSeguir.addActionListener(e -> irAMenuPrincipal());
+        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        totalPanel.setOpaque(false);
+        totalPanel.setBorder(new EmptyBorder(6, 32, 20, 32));
+        totalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lblTotal = new JLabel("Total: " + formatoPrecio(total));
+        lblTotal.setFont(new Font("SansSerif", Font.BOLD, 22));
+        lblTotal.setForeground(BROWN_950);
+        totalPanel.add(lblTotal);
+        categoriaContenedor.add(totalPanel);
 
-        JPanel botonWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        botonWrap.setOpaque(false);
-        botonWrap.setBorder(new EmptyBorder(0, 32, 40, 32));
-        botonWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-        botonWrap.add(btnSeguir);
-        categoriaContenedor.add(botonWrap);
+        // ===== metodo de pago + boton de confirmar =====
+        JPanel pagoPanel = new JPanel();
+        pagoPanel.setOpaque(false);
+        pagoPanel.setLayout(new BoxLayout(pagoPanel, BoxLayout.Y_AXIS));
+        pagoPanel.setBorder(new EmptyBorder(0, 32, 20, 32));
+        pagoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        categoriaContenedor.revalidate();
-        categoriaContenedor.repaint();
-        mostrarCategoriaEnScroll();
+        JLabel lblMetodo = new JLabel("Metodo de pago:");
+        lblMetodo.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lblMetodo.setForeground(BROWN_950);
+        lblMetodo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JComboBox<String> cbMetodoPago = new JComboBox<>();
+        for (String nombre : metodosPagoMap.keySet()) {
+            cbMetodoPago.addItem(nombre);
+        }
+        cbMetodoPago.setFont(FONT_SUB);
+        cbMetodoPago.setAlignmentX(Component.LEFT_ALIGNMENT);
+        cbMetodoPago.setMaximumSize(new Dimension(240, 36));
+
+        pagoPanel.add(lblMetodo);
+        pagoPanel.add(Box.createVerticalStrut(6));
+        pagoPanel.add(cbMetodoPago);
+        categoriaContenedor.add(pagoPanel);
+
+        JButton btnConfirmar = new BotonAmbar("Confirmar pedido");
+        btnConfirmar.addActionListener(e -> registrarVenta((String) cbMetodoPago.getSelectedItem()));
+
+        JPanel confirmarWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        confirmarWrap.setOpaque(false);
+        confirmarWrap.setBorder(new EmptyBorder(0, 32, 20, 32));
+        confirmarWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        confirmarWrap.add(btnConfirmar);
+        categoriaContenedor.add(confirmarWrap);
     }
+
+    JButton btnSeguir = new BotonAmbar("Seguir comprando");
+    btnSeguir.addActionListener(e -> irAMenuPrincipal());
+
+    JPanel botonWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+    botonWrap.setOpaque(false);
+    botonWrap.setBorder(new EmptyBorder(0, 32, 40, 32));
+    botonWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+    botonWrap.add(btnSeguir);
+    categoriaContenedor.add(botonWrap);
+
+    categoriaContenedor.revalidate();
+    categoriaContenedor.repaint();
+    mostrarCategoriaEnScroll();
+}
 
     private JPanel buildFilaCarrito(ItemPedido item) {
         JPanel fila = new JPanel(new BorderLayout(14, 0));

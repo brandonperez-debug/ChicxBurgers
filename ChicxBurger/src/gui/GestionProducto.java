@@ -6,10 +6,11 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
-import ChicxBurgerDB.UsuarioDAO;
+import ChicxBurgerDB.ProductoDAO;
 
-public class GestionUsuarios extends JFrame {
+public class GestionProducto extends JFrame {
 
     Color ROJO = Color.decode("#f53418");
     Color NARANJA = Color.decode("#f6781c");
@@ -18,22 +19,20 @@ public class GestionUsuarios extends JFrame {
     Color BEIGE = Color.decode("#e0cfc8");
     Color CAFE = Color.decode("#661d05");
 
-    JTextField txtNombreCompleto;
-    JTextField txtUsuarioLogin;
-    JPasswordField txtContrasena;
-    JTextField txtBuscar;
-    JComboBox<String> cbRol;
-    JComboBox<String> cbEstado;
+    JTextField txtNombre, txtDescripcion, txtPrecio, txtBuscar;
+    JComboBox<String> cbCategoria, cbTiempoComida, cbEstado;
 
     JTable tabla;
     DefaultTableModel modelo;
 
-    UsuarioDAO usuarioDAO = new UsuarioDAO();
-    int idSeleccionado = -1; // -1 = ningun usuario seleccionado (modo agregar)
+    ProductoDAO productoDAO = new ProductoDAO();
+    HashMap<String, Integer> categoriasMap = new HashMap<>();
+    HashMap<String, Integer> tiemposMap = new HashMap<>();
+    int idSeleccionado = -1;
 
-    public GestionUsuarios() {
+    public GestionProducto() {
 
-        setTitle("Chiksx Burger - Gestion de Usuarios");
+        setTitle("Chiksx Burger - Gestion de Producto");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -44,11 +43,11 @@ public class GestionUsuarios extends JFrame {
         encabezado.setBackground(Color.WHITE);
         encabezado.setBorder(new EmptyBorder(15, 30, 15, 30));
 
-        JLabel titulo = new JLabel("Gestion de Usuarios");
+        JLabel titulo = new JLabel("Gestion de Producto");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 25));
         titulo.setForeground(CAFE);
 
-        JLabel subtitulo = new JLabel("Administra los usuarios de Chiksx Burger");
+        JLabel subtitulo = new JLabel("Administra el catalogo de productos");
         subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitulo.setForeground(Color.GRAY);
 
@@ -78,41 +77,40 @@ public class GestionUsuarios extends JFrame {
         ));
         datos.setLayout(new BoxLayout(datos, BoxLayout.Y_AXIS));
 
-        JLabel tituloDatos = new JLabel("Datos del usuario");
+        JLabel tituloDatos = new JLabel("Datos del producto");
         tituloDatos.setFont(new Font("Segoe UI", Font.BOLD, 18));
         tituloDatos.setForeground(CAFE);
         tituloDatos.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         datos.add(tituloDatos);
         datos.add(Box.createVerticalStrut(15));
 
-        txtNombreCompleto = crearCampo();
-        txtUsuarioLogin = crearCampo();
-        txtContrasena = new JPasswordField();
-        txtContrasena.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtContrasena.setPreferredSize(new Dimension(230, 35));
+        txtNombre = crearCampo();
+        txtDescripcion = crearCampo();
+        txtPrecio = crearCampo();
 
-        cbRol = new JComboBox<>();
-        cbRol.addItem("Administrador");
-        cbRol.addItem("Cajero");
-        cbRol.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cbCategoria = new JComboBox<>();
+        cbCategoria.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        cbTiempoComida = new JComboBox<>();
+        cbTiempoComida.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         cbEstado = new JComboBox<>();
         cbEstado.addItem("Activo");
         cbEstado.addItem("Inactivo");
         cbEstado.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        datos.add(crearFila("Nombre completo:", txtNombreCompleto));
-        datos.add(crearFila("Usuario (login):", txtUsuarioLogin));
-        datos.add(crearFila("Contrasena:", txtContrasena));
-        datos.add(crearFila("Rol:", cbRol));
+        datos.add(crearFila("Nombre:", txtNombre));
+        datos.add(crearFila("Descripcion:", txtDescripcion));
+        datos.add(crearFila("Precio:", txtPrecio));
+        datos.add(crearFila("Categoria:", cbCategoria));
+        datos.add(crearFila("Tiempo de comida:", cbTiempoComida));
         datos.add(crearFila("Estado:", cbEstado));
 
         datos.add(Box.createVerticalStrut(15));
 
         JButton btnAgregar = crearBoton("AGREGAR", ROJO);
         JButton btnEditar = crearBoton("EDITAR", NARANJA);
-        JButton btnEliminar = crearBoton("ELIMINAR", CAFE);
+        JButton btnEliminar = crearBoton("DESACTIVAR", CAFE);
         JButton btnLimpiar = crearBoton("LIMPIAR", MOSTAZA);
 
         datos.add(btnAgregar);
@@ -132,28 +130,23 @@ public class GestionUsuarios extends JFrame {
 
         JPanel buscarPanel = new JPanel(new BorderLayout(10, 0));
         buscarPanel.setBackground(Color.WHITE);
-
-        JLabel buscarLabel = new JLabel("Buscar usuario:");
+        JLabel buscarLabel = new JLabel("Buscar producto:");
         buscarLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         buscarLabel.setForeground(CAFE);
-
         txtBuscar = new JTextField();
         JButton btnBuscar = crearBoton("BUSCAR", DORADO);
-
         buscarPanel.add(buscarLabel, BorderLayout.WEST);
         buscarPanel.add(txtBuscar, BorderLayout.CENTER);
         buscarPanel.add(btnBuscar, BorderLayout.EAST);
-
         panelTabla.add(buscarPanel, BorderLayout.NORTH);
 
-        String[] columnas = {"ID", "Nombre completo", "Usuario", "Rol", "Estado"};
+        String[] columnas = {"ID", "Nombre", "Descripcion", "Precio", "Categoria", "Tiempo", "Estado"};
         modelo = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int fila, int columna) {
                 return false;
             }
         };
-
         tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(35);
@@ -172,35 +165,30 @@ public class GestionUsuarios extends JFrame {
         principal.add(contenido, BorderLayout.CENTER);
         add(principal);
 
-        cargarUsuarios();
+        cargarCombos();
+        cargarProductos();
 
         btnAgregar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                if (txtNombreCompleto.getText().isEmpty()
-                        || txtUsuarioLogin.getText().isEmpty()
-                        || txtContrasena.getPassword().length == 0) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Completa nombre, usuario y contrasena.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                if (txtNombre.getText().isEmpty() || txtPrecio.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Completa nombre y precio.");
                     return;
                 }
-
                 try {
-                    boolean ok = usuarioDAO.crearUsuario(
-                            txtNombreCompleto.getText(),
-                            txtUsuarioLogin.getText(),
-                            new String(txtContrasena.getPassword()),
-                            (String) cbRol.getSelectedItem()
-                    );
-                    if (ok) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario agregado correctamente.");
-                        limpiar();
-                        cargarUsuarios();
-                    }
+                    double precio = Double.parseDouble(txtPrecio.getText());
+                    int idCat = categoriasMap.get((String) cbCategoria.getSelectedItem());
+                    int idTiempo = tiemposMap.get((String) cbTiempoComida.getSelectedItem());
+
+                    productoDAO.insertarProducto(txtNombre.getText(), txtDescripcion.getText(), precio, idCat, idTiempo);
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Producto agregado correctamente.");
+                    limpiar();
+                    cargarProductos();
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(GestionProducto.this, "El precio debe ser un numero valido.");
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Error al agregar usuario: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Error al agregar: " + ex.getMessage());
                 }
             }
         });
@@ -208,30 +196,26 @@ public class GestionUsuarios extends JFrame {
         btnEditar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (idSeleccionado == -1) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this, "Selecciona un usuario de la tabla.");
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Selecciona un producto de la tabla.");
                     return;
                 }
-
                 try {
+                    double precio = Double.parseDouble(txtPrecio.getText());
+                    int idCat = categoriasMap.get((String) cbCategoria.getSelectedItem());
+                    int idTiempo = tiemposMap.get((String) cbTiempoComida.getSelectedItem());
                     int estado = cbEstado.getSelectedItem().equals("Activo") ? 1 : 0;
-                    boolean ok = usuarioDAO.actualizarUsuario(
-                            idSeleccionado,
-                            txtNombreCompleto.getText(),
-                            txtUsuarioLogin.getText(),
-                            new String(txtContrasena.getPassword()),
-                            (String) cbRol.getSelectedItem(),
-                            estado
-                    );
-                    if (ok) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario actualizado correctamente.");
-                        limpiar();
-                        cargarUsuarios();
-                    }
+
+                    productoDAO.actualizarProducto(idSeleccionado, txtNombre.getText(), txtDescripcion.getText(),
+                            precio, idCat, idTiempo, estado);
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Producto actualizado correctamente.");
+                    limpiar();
+                    cargarProductos();
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(GestionProducto.this, "El precio debe ser un numero valido.");
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Error al actualizar usuario: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Error al actualizar: " + ex.getMessage());
                 }
             }
         });
@@ -239,24 +223,16 @@ public class GestionUsuarios extends JFrame {
         btnEliminar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (idSeleccionado == -1) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this, "Selecciona un usuario.");
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Selecciona un producto.");
                     return;
                 }
-
-                int respuesta = JOptionPane.showConfirmDialog(GestionUsuarios.this,
-                        "Deseas eliminar este usuario?", "Confirmar", JOptionPane.YES_NO_OPTION);
-
-                if (respuesta == JOptionPane.YES_OPTION) {
-                    try {
-                        usuarioDAO.eliminarUsuario(idSeleccionado);
-                        limpiar();
-                        cargarUsuarios();
-                    } catch (SQLException ex) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this,
-                                "No se pudo eliminar (puede tener ventas o turnos asociados): " + ex.getMessage());
-                    }
+                try {
+                    productoDAO.desactivarProducto(idSeleccionado);
+                    limpiar();
+                    cargarProductos();
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(GestionProducto.this, "Error al desactivar: " + ex.getMessage());
                 }
             }
         });
@@ -275,11 +251,12 @@ public class GestionUsuarios extends JFrame {
                 if (fila == -1) return;
 
                 idSeleccionado = (int) modelo.getValueAt(fila, 0);
-                txtNombreCompleto.setText(modelo.getValueAt(fila, 1).toString());
-                txtUsuarioLogin.setText(modelo.getValueAt(fila, 2).toString());
-                txtContrasena.setText("");
-                cbRol.setSelectedItem(modelo.getValueAt(fila, 3).toString());
-                cbEstado.setSelectedItem(modelo.getValueAt(fila, 4).toString());
+                txtNombre.setText(modelo.getValueAt(fila, 1).toString());
+                txtDescripcion.setText(modelo.getValueAt(fila, 2).toString());
+                txtPrecio.setText(modelo.getValueAt(fila, 3).toString());
+                cbCategoria.setSelectedItem(modelo.getValueAt(fila, 4).toString());
+                cbTiempoComida.setSelectedItem(modelo.getValueAt(fila, 5).toString());
+                cbEstado.setSelectedItem(modelo.getValueAt(fila, 6).toString());
             }
         });
 
@@ -289,28 +266,43 @@ public class GestionUsuarios extends JFrame {
                 String buscar = txtBuscar.getText().toLowerCase();
                 for (int i = 0; i < tabla.getRowCount(); i++) {
                     String nombre = tabla.getValueAt(i, 1).toString().toLowerCase();
-                    String login = tabla.getValueAt(i, 2).toString().toLowerCase();
-                    if (nombre.contains(buscar) || login.contains(buscar)) {
+                    if (nombre.contains(buscar)) {
                         tabla.setRowSelectionInterval(i, i);
                         return;
                     }
                 }
-                JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario no encontrado.");
+                JOptionPane.showMessageDialog(GestionProducto.this, "Producto no encontrado.");
             }
         });
 
         setVisible(true);
     }
 
-    private void cargarUsuarios() {
+    private void cargarCombos() {
+        try {
+            List<Object[]> categorias = productoDAO.listarCategorias();
+            for (Object[] c : categorias) {
+                categoriasMap.put((String) c[1], (Integer) c[0]);
+                cbCategoria.addItem((String) c[1]);
+            }
+            List<Object[]> tiempos = productoDAO.listarTiemposComida();
+            for (Object[] t : tiempos) {
+                tiemposMap.put((String) t[1], (Integer) t[0]);
+                cbTiempoComida.addItem((String) t[1]);
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar categorias/tiempos: " + e.getMessage());
+        }
+    }
+
+    private void cargarProductos() {
         modelo.setRowCount(0);
         try {
-            List<Object[]> lista = usuarioDAO.listarUsuarios();
-            for (Object[] fila : lista) {
+            for (Object[] fila : productoDAO.listarTodos()) {
                 modelo.addRow(fila);
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar usuarios: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage());
         }
     }
 
@@ -325,11 +317,9 @@ public class GestionUsuarios extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 5));
         panel.setBackground(Color.WHITE);
         panel.setMaximumSize(new Dimension(270, 45));
-
         JLabel etiqueta = new JLabel(nombre);
         etiqueta.setFont(new Font("Segoe UI", Font.BOLD, 13));
         etiqueta.setForeground(CAFE);
-
         panel.add(etiqueta, BorderLayout.NORTH);
         panel.add(campo, BorderLayout.CENTER);
         return panel;
@@ -348,10 +338,11 @@ public class GestionUsuarios extends JFrame {
 
     private void limpiar() {
         idSeleccionado = -1;
-        txtNombreCompleto.setText("");
-        txtUsuarioLogin.setText("");
-        txtContrasena.setText("");
-        cbRol.setSelectedIndex(0);
+        txtNombre.setText("");
+        txtDescripcion.setText("");
+        txtPrecio.setText("");
+        if (cbCategoria.getItemCount() > 0) cbCategoria.setSelectedIndex(0);
+        if (cbTiempoComida.getItemCount() > 0) cbTiempoComida.setSelectedIndex(0);
         cbEstado.setSelectedIndex(0);
         tabla.clearSelection();
     }
@@ -360,7 +351,7 @@ public class GestionUsuarios extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new GestionUsuarios();
+                new GestionProducto();
             }
         });
     }

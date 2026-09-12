@@ -2,16 +2,16 @@ package gui;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import main.Conexion.conexion;
+import java.sql.*;
 
 public class PaneldeAdmin extends JFrame {
 
-    // ==========================================
-    // COLORES DE CHIKSX BURGER
-    // ==========================================
     Color ROJO = Color.decode("#f53418");
     Color NARANJA = Color.decode("#f6781c");
     Color MOSTAZA = Color.decode("#a28813");
@@ -19,37 +19,25 @@ public class PaneldeAdmin extends JFrame {
     Color BEIGE = Color.decode("#e0cfc8");
     Color CAFE = Color.decode("#661d05");
 
-    // ==========================================
-    // FUENTES
-    // ==========================================
     Font titulo = new Font("Segoe UI", Font.BOLD, 25);
     Font subtitulo = new Font("Segoe UI", Font.BOLD, 17);
     Font normal = new Font("Segoe UI", Font.PLAIN, 14);
     Font boton = new Font("Segoe UI", Font.BOLD, 14);
 
-    // ==========================================
-    // CONSTRUCTOR
-    // ==========================================
+    JPanel tablaContenedor; // panel donde alternamos entre tabla y mensaje vacio
+
     public PaneldeAdmin() {
-        
-        
-        
+
         setTitle("Chiksx Burger - Administracion");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
 
-        // ==========================================
-        // BARRA LATERAL
-        // ==========================================
         JPanel menu = new JPanel();
         menu.setBackground(CAFE);
         menu.setPreferredSize(new Dimension(230, 0));
         menu.setLayout(new BorderLayout());
 
-        // ==========================================
-        // LOGO
-        // ==========================================
         JPanel logoPanel = new JPanel();
         logoPanel.setBackground(CAFE);
         logoPanel.setBorder(new EmptyBorder(30, 15, 25, 15));
@@ -76,35 +64,32 @@ public class PaneldeAdmin extends JFrame {
 
         menu.add(logoPanel, BorderLayout.NORTH);
 
-        // ==========================================
-        // OPCIONES DEL MENU
-        // ==========================================
         JPanel opciones = new JPanel();
         opciones.setBackground(CAFE);
         opciones.setLayout(new BoxLayout(opciones, BoxLayout.Y_AXIS));
 
         JButton inicio = crearBotonMenu("Inicio");
-        JButton usuarios = crearBotonMenu("Gestion usuarios");
-        JButton cuentas = crearBotonMenu("Gestion cuentas");
-        JButton pedidos = crearBotonMenu("Pedidos");
-        JButton productos = crearBotonMenu("Productos");
+        JButton usuarios = crearBotonMenu("Gestion de usuarios");
+        JButton pedidos = crearBotonMenu("Gestion de pedidos");
+        JButton producto = crearBotonMenu("Gestion de producto");
+        JButton stock = crearBotonMenu("Gestion de stock");
+        JButton promociones = crearBotonMenu("Gestion de promociones");
+        JButton catalogo = crearBotonMenu("Gestion de catalogo y menu dinamico");
         JButton salir = crearBotonMenu("Cerrar sesion");
 
         opciones.add(inicio);
         opciones.add(usuarios);
-        opciones.add(cuentas);
         opciones.add(pedidos);
-        opciones.add(productos);
+        opciones.add(producto);
+        opciones.add(stock);
+        opciones.add(promociones);
+        opciones.add(catalogo);
 
         opciones.add(Box.createVerticalGlue());
 
         opciones.add(salir);
 
         menu.add(opciones, BorderLayout.CENTER);
-
-        // ==========================================
-        // EVENTOS DE LOS BOTONES
-        // ==========================================
 
         usuarios.addActionListener(new ActionListener() {
             @Override
@@ -113,42 +98,65 @@ public class PaneldeAdmin extends JFrame {
             }
         });
 
-        cuentas.addActionListener(new ActionListener() {
+        pedidos.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new GestionCuentas();
+                new GestionPedidos();
+            }
+        });
+
+        producto.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new GestionProducto();
+            }
+        });
+
+        stock.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new GestionStock();
+            }
+        });
+
+        promociones.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new GestionPromociones();
+            }
+        });
+
+        catalogo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new GestionCatalogo();
             }
         });
 
         salir.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 int opcion = JOptionPane.showConfirmDialog(
                         PaneldeAdmin.this,
                         "¿Deseas cerrar sesion?",
                         "Cerrar sesion",
                         JOptionPane.YES_NO_OPTION
                 );
-
                 if (opcion == JOptionPane.YES_OPTION) {
                     dispose();
                 }
             }
         });
 
-        // ==========================================
-        // PANEL PRINCIPAL
-        // ==========================================
         JPanel principal = new JPanel(new BorderLayout());
         principal.setBackground(BEIGE);
 
-        // ==========================================
-        // ENCABEZADO
-        // ==========================================
         JPanel encabezado = new JPanel(new BorderLayout());
         encabezado.setBackground(Color.WHITE);
-        encabezado.setBorder(new EmptyBorder(15, 30, 15, 30));
+        encabezado.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0, 0, 0, 25)),
+                new EmptyBorder(15, 30, 15, 30)
+        ));
 
         JLabel nombre = new JLabel("Chiksx Burger");
         nombre.setFont(titulo);
@@ -161,7 +169,6 @@ public class PaneldeAdmin extends JFrame {
         JPanel textos = new JPanel();
         textos.setBackground(Color.WHITE);
         textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
-
         textos.add(nombre);
         textos.add(administrador);
 
@@ -170,22 +177,15 @@ public class PaneldeAdmin extends JFrame {
         JLabel usuarioAdmin = new JLabel("Administrador");
         usuarioAdmin.setFont(subtitulo);
         usuarioAdmin.setForeground(CAFE);
-
         encabezado.add(usuarioAdmin, BorderLayout.EAST);
 
         principal.add(encabezado, BorderLayout.NORTH);
 
-        // ==========================================
-        // CONTENIDO
-        // ==========================================
         JPanel contenido = new JPanel();
         contenido.setBackground(BEIGE);
         contenido.setBorder(new EmptyBorder(25, 35, 25, 35));
         contenido.setLayout(new BorderLayout(20, 20));
 
-        // ==========================================
-        // TITULO
-        // ==========================================
         JPanel tituloPanel = new JPanel(new BorderLayout());
         tituloPanel.setBackground(BEIGE);
 
@@ -194,7 +194,7 @@ public class PaneldeAdmin extends JFrame {
         bienvenida.setForeground(CAFE);
 
         JLabel descripcion = new JLabel(
-                "Administra los usuarios, cuentas y pedidos de Chiksx Burger"
+                "Administra los usuarios, pedidos, productos, stock, promociones y catalogo de Chiksx Burger"
         );
         descripcion.setFont(normal);
         descripcion.setForeground(Color.DARK_GRAY);
@@ -202,93 +202,51 @@ public class PaneldeAdmin extends JFrame {
         JPanel textoTitulo = new JPanel();
         textoTitulo.setBackground(BEIGE);
         textoTitulo.setLayout(new BoxLayout(textoTitulo, BoxLayout.Y_AXIS));
-
         textoTitulo.add(bienvenida);
         textoTitulo.add(Box.createVerticalStrut(5));
         textoTitulo.add(descripcion);
 
         tituloPanel.add(textoTitulo, BorderLayout.WEST);
-
         contenido.add(tituloPanel, BorderLayout.NORTH);
 
-        // ==========================================
-        // CENTRO
-        // ==========================================
         JPanel centro = new JPanel();
         centro.setBackground(BEIGE);
         centro.setLayout(new BorderLayout(20, 20));
 
-        // ==========================================
-        // TARJETAS
-        // ==========================================
-        JPanel tarjetas = new JPanel(new GridLayout(1, 4, 15, 0));
+        // ===== TARJETAS CON ICONO, CONECTADAS A LA BASE DE DATOS =====
+        JPanel tarjetas = new JPanel(new GridLayout(1, 4, 18, 0));
         tarjetas.setBackground(BEIGE);
 
-        tarjetas.add(crearTarjeta(
-                "HAMBURGUESAS",
-                "24",
-                ROJO
-        ));
-
-        tarjetas.add(crearTarjeta(
-                "BEBIDAS",
-                "18",
-                NARANJA
-        ));
-
-        tarjetas.add(crearTarjeta(
-                "USUARIOS",
-                "35",
-                MOSTAZA
-        ));
-
-        tarjetas.add(crearTarjeta(
-                "CUENTAS",
-                "12",
-                DORADO
-        ));
+        tarjetas.add(crearTarjeta("🍔", "HAMBURGUESAS", String.valueOf(contarProductosPorCategoria("Hamburguesas")), ROJO));
+        tarjetas.add(crearTarjeta("🥤", "BEBIDAS", String.valueOf(contarProductosPorCategoria("Bebidas")), NARANJA));
+        tarjetas.add(crearTarjeta("👤", "USUARIOS", String.valueOf(contarUsuariosActivos()), MOSTAZA));
+        tarjetas.add(crearTarjeta("🏷️", "PROMOCIONES", String.valueOf(contarPromocionesActivas()), DORADO));
 
         centro.add(tarjetas, BorderLayout.NORTH);
 
-        // ==========================================
-        // PARTE INFERIOR
-        // ==========================================
         JPanel inferior = new JPanel(new BorderLayout(20, 0));
         inferior.setBackground(BEIGE);
 
-        // ==========================================
-        // BOTONES DE GESTION
-        // ==========================================
         JPanel gestion = new JPanel();
         gestion.setBackground(Color.WHITE);
         gestion.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CAFE, 1),
+                BorderFactory.createLineBorder(new Color(0, 0, 0, 25), 1),
                 new EmptyBorder(20, 20, 20, 20)
         ));
-
         gestion.setLayout(new BoxLayout(gestion, BoxLayout.Y_AXIS));
 
-        JLabel tituloGestion = new JLabel("Gestion administrativa");
+        JLabel tituloGestion = new JLabel("Accesos rapidos");
         tituloGestion.setFont(subtitulo);
         tituloGestion.setForeground(CAFE);
         tituloGestion.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel textoGestion = new JLabel(
-                "Selecciona una opcion"
-        );
+        JLabel textoGestion = new JLabel("Selecciona una opcion");
         textoGestion.setFont(normal);
         textoGestion.setForeground(Color.GRAY);
         textoGestion.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton btnUsuarios = crearBotonGestion(
-                "GESTION USUARIOS",
-                ROJO
-        );
-
-        JButton btnCuentas = crearBotonGestion(
-                "GESTION CUENTAS",
-                CAFE
-        );
+        JButton btnUsuarios = crearBotonGestion("GESTION USUARIOS", ROJO);
+        JButton btnPedidos = crearBotonGestion("GESTION PEDIDOS", CAFE);
 
         gestion.add(tituloGestion);
         gestion.add(Box.createVerticalStrut(5));
@@ -296,7 +254,7 @@ public class PaneldeAdmin extends JFrame {
         gestion.add(Box.createVerticalStrut(25));
         gestion.add(btnUsuarios);
         gestion.add(Box.createVerticalStrut(15));
-        gestion.add(btnCuentas);
+        gestion.add(btnPedidos);
 
         btnUsuarios.addActionListener(new ActionListener() {
             @Override
@@ -305,116 +263,206 @@ public class PaneldeAdmin extends JFrame {
             }
         });
 
-        btnCuentas.addActionListener(new ActionListener() {
+        btnPedidos.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new GestionCuentas();
+                new GestionPedidos();
             }
         });
 
-        // ==========================================
-        // TABLA DE PEDIDOS
-        // ==========================================
-        JPanel tablaPanel = new JPanel(new BorderLayout());
+        JPanel tablaPanel = new JPanel(new BorderLayout(10, 10));
         tablaPanel.setBackground(Color.WHITE);
         tablaPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CAFE, 1),
+                BorderFactory.createLineBorder(new Color(0, 0, 0, 25), 1),
                 new EmptyBorder(15, 15, 15, 15)
         ));
 
         JLabel tituloPedidos = new JLabel("Pedidos recientes");
         tituloPedidos.setFont(subtitulo);
         tituloPedidos.setForeground(CAFE);
-
         tablaPanel.add(tituloPedidos, BorderLayout.NORTH);
 
-        String[] columnas = {
-            "No.",
-            "Cliente",
-            "Pedido",
-            "Tipo",
-            "Total",
-            "Estado"
-        };
+        tablaContenedor = new JPanel(new BorderLayout());
+        tablaContenedor.setBackground(Color.WHITE);
+        tablaPanel.add(tablaContenedor, BorderLayout.CENTER);
 
-        Object[][] datos = {
-            {"01", "Carlos", "Hamburguesa Clasica", "Hamburguesa", "Q35.00", "Entregado"},
-            {"02", "Maria", "Combo Chiksx", "Hamburguesa", "Q48.00", "Preparando"},
-            {"03", "Jose", "Coca Cola", "Bebida", "Q12.00", "Entregado"},
-            {"04", "Ana", "Hamburguesa BBQ", "Hamburguesa", "Q42.00", "Pendiente"},
-            {"05", "Luis", "Combo Familiar", "Hamburguesa", "Q85.00", "Preparando"}
-        };
-
-        DefaultTableModel modelo = new DefaultTableModel(datos, columnas) {
-
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        JTable tabla = new JTable(modelo);
-
-        tabla.setFont(normal);
-        tabla.setRowHeight(35);
-        tabla.getTableHeader().setFont(
-                new Font("Segoe UI", Font.BOLD, 13)
-        );
-        tabla.getTableHeader().setBackground(CAFE);
-        tabla.getTableHeader().setForeground(Color.WHITE);
-
-        tabla.setSelectionBackground(BEIGE);
-        tabla.setSelectionForeground(CAFE);
-
-        JScrollPane scroll = new JScrollPane(tabla);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-
-        tablaPanel.add(scroll, BorderLayout.CENTER);
+        cargarPanelPedidosRecientes();
 
         inferior.add(gestion, BorderLayout.WEST);
         inferior.add(tablaPanel, BorderLayout.CENTER);
 
         centro.add(inferior, BorderLayout.CENTER);
-
         contenido.add(centro, BorderLayout.CENTER);
-
         principal.add(contenido, BorderLayout.CENTER);
 
-        // ==========================================
-        //  AGREGAR A LA VENTANA
-        // ==========================================
         add(menu, BorderLayout.WEST);
         add(principal, BorderLayout.CENTER);
 
         setVisible(true);
     }
 
-    // ==========================================
-    // CREAR BOTON DEL MENU
-    // ==========================================
+    // ================= CONSULTAS A LA BASE DE DATOS =================
+
+    private int contarProductosPorCategoria(String nombreCategoria) {
+        String sql = "SELECT COUNT(*) FROM PRODUCTO p JOIN CATEGORIA c ON p.id_categoria = c.id_categoria "
+                + "WHERE c.nombre_categoria = ? AND p.estado = 1";
+        try (Connection con = conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombreCategoria);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al contar productos: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private int contarUsuariosActivos() {
+        String sql = "SELECT COUNT(*) FROM USUARIO WHERE estado = 1";
+        try (Connection con = conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al contar usuarios: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private int contarPromocionesActivas() {
+        String sql = "SELECT COUNT(*) FROM PROMOCION WHERE estado = 1";
+        try (Connection con = conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al contar promociones: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    // arma la tabla de pedidos recientes, o un mensaje si no hay ninguno todavia
+    private void cargarPanelPedidosRecientes() {
+
+        tablaContenedor.removeAll();
+
+        String[] columnas = {"No. Venta", "Usuario", "Metodo de pago", "Total", "Fecha"};
+        DefaultTableModel modeloTabla = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        String sql = "SELECT v.id_venta, u.nombre_completo, m.nombre_metodo, v.total, v.fecha_hora "
+                + "FROM VENTA v "
+                + "JOIN USUARIO u ON v.id_usuario = u.id_usuario "
+                + "JOIN METODO_PAGO m ON v.id_metodo_pago = m.id_metodo_pago "
+                + "ORDER BY v.fecha_hora DESC LIMIT 5";
+
+        try (Connection con = conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                modeloTabla.addRow(new Object[]{
+                    rs.getInt("id_venta"),
+                    rs.getString("nombre_completo"),
+                    rs.getString("nombre_metodo"),
+                    String.format("Q%.2f", rs.getDouble("total")),
+                    rs.getTimestamp("fecha_hora")
+                });
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar pedidos recientes: " + e.getMessage());
+        }
+
+        if (modeloTabla.getRowCount() == 0) {
+
+            JPanel vacio = new JPanel(new GridBagLayout());
+            vacio.setBackground(Color.WHITE);
+
+            JPanel contenidoVacio = new JPanel();
+            contenidoVacio.setBackground(Color.WHITE);
+            contenidoVacio.setLayout(new BoxLayout(contenidoVacio, BoxLayout.Y_AXIS));
+
+            JLabel icono = new JLabel("🧾");
+            icono.setFont(new Font("Segoe UI", Font.PLAIN, 40));
+            icono.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            JLabel mensaje = new JLabel("Todavia no hay pedidos registrados");
+            mensaje.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            mensaje.setForeground(CAFE);
+            mensaje.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            JLabel submensaje = new JLabel("Registra tu primer pedido desde Gestion de pedidos");
+            submensaje.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            submensaje.setForeground(Color.GRAY);
+            submensaje.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            contenidoVacio.add(icono);
+            contenidoVacio.add(Box.createVerticalStrut(8));
+            contenidoVacio.add(mensaje);
+            contenidoVacio.add(Box.createVerticalStrut(4));
+            contenidoVacio.add(submensaje);
+
+            vacio.add(contenidoVacio);
+            tablaContenedor.add(vacio, BorderLayout.CENTER);
+
+        } else {
+
+            JTable tabla = new JTable(modeloTabla);
+            tabla.setFont(normal);
+            tabla.setRowHeight(35);
+            tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+            tabla.getTableHeader().setBackground(CAFE);
+            tabla.getTableHeader().setForeground(Color.WHITE);
+            tabla.setSelectionBackground(BEIGE);
+            tabla.setSelectionForeground(CAFE);
+            tabla.setShowGrid(false);
+            tabla.setIntercellSpacing(new Dimension(0, 0));
+
+            // filas alternadas para que se lea mejor
+            tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value,
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                    if (!isSelected) {
+                        c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 245, 242));
+                    }
+                    return c;
+                }
+            });
+
+            JScrollPane scroll = new JScrollPane(tabla);
+            scroll.setBorder(BorderFactory.createEmptyBorder());
+            tablaContenedor.add(scroll, BorderLayout.CENTER);
+        }
+
+        tablaContenedor.revalidate();
+        tablaContenedor.repaint();
+    }
+
+    // ================= UI HELPERS =================
+
     private JButton crearBotonMenu(String texto) {
-
         JButton boton = new JButton(texto);
-
         boton.setFont(normal);
         boton.setForeground(Color.WHITE);
         boton.setBackground(CAFE);
-
-        boton.setBorder(BorderFactory.createEmptyBorder(
-                15, 20, 15, 10
-        ));
-
+        boton.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 10));
         boton.setHorizontalAlignment(SwingConstants.LEFT);
         boton.setFocusPainted(false);
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         boton.addMouseListener(new java.awt.event.MouseAdapter() {
-
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
                 boton.setBackground(ROJO);
             }
-
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 boton.setBackground(CAFE);
@@ -424,86 +472,73 @@ public class PaneldeAdmin extends JFrame {
         return boton;
     }
 
-    // ==========================================
-    // CREAR TARJETA
-    // ==========================================
-    private JPanel crearTarjeta(
-            String titulo,
-            String numero,
-            Color color
-    ) {
-
+    private JPanel crearTarjeta(String icono, String titulo, String numero, Color color) {
         JPanel tarjeta = new JPanel();
         tarjeta.setBackground(Color.WHITE);
-
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(color, 2),
+                BorderFactory.createLineBorder(color, 2, true),
                 new EmptyBorder(15, 15, 15, 15)
         ));
+        tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
 
-        tarjeta.setLayout(new BoxLayout(
-                tarjeta,
-                BoxLayout.Y_AXIS
-        ));
+        JLabel iconoLabel = new JLabel(icono);
+        iconoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 26));
+        iconoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel tituloLabel = new JLabel(titulo);
-        tituloLabel.setFont(
-                new Font("Segoe UI", Font.BOLD, 12)
-        );
+        tituloLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         tituloLabel.setForeground(Color.GRAY);
         tituloLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel numeroLabel = new JLabel(numero);
-        numeroLabel.setFont(
-                new Font("Segoe UI", Font.BOLD, 30)
-        );
+        numeroLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         numeroLabel.setForeground(color);
         numeroLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        tarjeta.add(iconoLabel);
+        tarjeta.add(Box.createVerticalStrut(6));
         tarjeta.add(tituloLabel);
-        tarjeta.add(Box.createVerticalStrut(8));
+        tarjeta.add(Box.createVerticalStrut(4));
         tarjeta.add(numeroLabel);
 
         return tarjeta;
     }
 
-    // ==========================================
-    // CREAR BOTON DE GESTION
-    // ==========================================
-    private JButton crearBotonGestion(
-        String texto,
-        Color color
-) {
+    private JButton crearBotonGestion(String texto, Color color) {
+        JButton boton = new JButton(texto);
+        boton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        boton.setForeground(Color.WHITE);
+        boton.setBackground(color);
+        boton.setPreferredSize(new Dimension(240, 55));
+        boton.setMaximumSize(new Dimension(240, 55));
+        boton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        boton.setFocusPainted(false);
+        boton.setBorder(BorderFactory.createEmptyBorder());
+        boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-    JButton boton = new JButton(texto);
+        Color colorOriginal = color;
+        Color colorHover = color.darker();
 
-    boton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    boton.setForeground(Color.WHITE);
-    boton.setBackground(color);
+        boton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                boton.setBackground(colorHover);
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                boton.setBackground(colorOriginal);
+            }
+        });
 
-    boton.setPreferredSize(new Dimension(240, 55));
-    boton.setMaximumSize(new Dimension(240, 55));
-    boton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return boton;
+    }
 
-    boton.setFocusPainted(false);
-    boton.setBorder(BorderFactory.createEmptyBorder());
-    boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-    return boton;
-}
-    // ==========================================
-    // MAIN
-    // ==========================================
     public static void main(String[] args) {
-
         SwingUtilities.invokeLater(new Runnable() {
-
             @Override
             public void run() {
                 new PaneldeAdmin();
             }
         });
     }
-    
-    
 }

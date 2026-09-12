@@ -190,4 +190,32 @@ CREATE TABLE DETALLE_VENTA (
  
 INSERT INTO USUARIO (nombre_completo, usuario_login, contrasena, rol, estado) VALUES
 ('Anthony Perez', 'admin1', '123456', 'Administrador', 1),
-('Brandon Perez', 'cajero1', '123456', 'Cajero', 2);
+('Brandon Perez', 'cajero1', '123456', 'Cajero', 1);
+
+INSERT INTO PROVEEDOR (nombre_proveedor, telefono, correo, direccion) VALUES
+('Distribuidora Central', '2222-1111', 'ventas@distcentral.com', 'Zona 4, Guatemala');
+
+INSERT INTO METODO_PAGO (nombre_metodo, descripcion) VALUES
+('Efectivo', 'Pago en efectivo'),
+('Tarjeta', 'Pago con tarjeta');
+
+INSERT INTO TIEMPO_COMIDA (nombre_horario, hora_inicio, hora_fin) VALUES
+('Todo el dia', '00:00:00', '23:59:59');
+
+INSERT INTO CATEGORIA (nombre_categoria, descripcion) VALUES
+('Hamburguesas', 'Hamburguesas de la casa'),
+('Bebidas', 'Bebidas frias');
+
+INSERT INTO PROVEEDOR (nombre_proveedor, telefono, correo, direccion) VALUES
+('Distribuidora Central', '2222-1111', 'ventas@distcentral.com', 'Zona 4, Guatemala');
+
+INSERT INTO PRODUCTO (nombre_producto, descripcion, precio, id_categoria, id_tiempo_comida, estado) VALUES
+('Hamburguesa Clasica', 'Carne, queso, lechuga', 35.00, 1, 1, 1),
+('Hamburguesa BBQ', 'Carne, tocino, salsa BBQ', 42.00, 1, 1, 1),
+('Coca Cola', 'Bebida gaseosa 12oz', 12.00, 2, 1, 1);
+
+INSERT INTO TURNO (id_usuario, monto_inicial) VALUES
+(1, 100.00);
+
+INSERT INTO PROMOCION (nombre_promocion, descripcion, tipo_descuento, valor_descuento, fecha_inicio, fecha_fin, estado) VALUES
+('Combo Clasico', 'Descuento en hamburguesa clasica', 'Porcentaje', 10.00, '2026-01-01', '2026-12-31', 1);

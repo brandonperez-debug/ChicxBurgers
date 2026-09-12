@@ -5,11 +5,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.Date;
 import java.sql.SQLException;
-import java.util.List;
-import ChicxBurgerDB.UsuarioDAO;
+import ChicxBurgerDB.PromocionDAO;
 
-public class GestionUsuarios extends JFrame {
+public class GestionPromociones extends JFrame {
 
     Color ROJO = Color.decode("#f53418");
     Color NARANJA = Color.decode("#f6781c");
@@ -18,22 +18,18 @@ public class GestionUsuarios extends JFrame {
     Color BEIGE = Color.decode("#e0cfc8");
     Color CAFE = Color.decode("#661d05");
 
-    JTextField txtNombreCompleto;
-    JTextField txtUsuarioLogin;
-    JPasswordField txtContrasena;
-    JTextField txtBuscar;
-    JComboBox<String> cbRol;
-    JComboBox<String> cbEstado;
+    JTextField txtNombre, txtDescripcion, txtValor, txtFechaInicio, txtFechaFin, txtBuscar;
+    JComboBox<String> cbTipo, cbEstado;
 
     JTable tabla;
     DefaultTableModel modelo;
 
-    UsuarioDAO usuarioDAO = new UsuarioDAO();
-    int idSeleccionado = -1; // -1 = ningun usuario seleccionado (modo agregar)
+    PromocionDAO promocionDAO = new PromocionDAO();
+    int idSeleccionado = -1;
 
-    public GestionUsuarios() {
+    public GestionPromociones() {
 
-        setTitle("Chiksx Burger - Gestion de Usuarios");
+        setTitle("Chiksx Burger - Gestion de Promociones");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -44,11 +40,11 @@ public class GestionUsuarios extends JFrame {
         encabezado.setBackground(Color.WHITE);
         encabezado.setBorder(new EmptyBorder(15, 30, 15, 30));
 
-        JLabel titulo = new JLabel("Gestion de Usuarios");
+        JLabel titulo = new JLabel("Gestion de Promociones");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 25));
         titulo.setForeground(CAFE);
 
-        JLabel subtitulo = new JLabel("Administra los usuarios de Chiksx Burger");
+        JLabel subtitulo = new JLabel("Administra las promociones y descuentos");
         subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitulo.setForeground(Color.GRAY);
 
@@ -78,34 +74,38 @@ public class GestionUsuarios extends JFrame {
         ));
         datos.setLayout(new BoxLayout(datos, BoxLayout.Y_AXIS));
 
-        JLabel tituloDatos = new JLabel("Datos del usuario");
+        JLabel tituloDatos = new JLabel("Datos de la promocion");
         tituloDatos.setFont(new Font("Segoe UI", Font.BOLD, 18));
         tituloDatos.setForeground(CAFE);
         tituloDatos.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         datos.add(tituloDatos);
         datos.add(Box.createVerticalStrut(15));
 
-        txtNombreCompleto = crearCampo();
-        txtUsuarioLogin = crearCampo();
-        txtContrasena = new JPasswordField();
-        txtContrasena.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtContrasena.setPreferredSize(new Dimension(230, 35));
+        txtNombre = crearCampo();
+        txtDescripcion = crearCampo();
+        txtValor = crearCampo();
 
-        cbRol = new JComboBox<>();
-        cbRol.addItem("Administrador");
-        cbRol.addItem("Cajero");
-        cbRol.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cbTipo = new JComboBox<>();
+        cbTipo.addItem("Porcentaje");
+        cbTipo.addItem("Monto Fijo");
+        cbTipo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        txtFechaInicio = crearCampo();
+        txtFechaInicio.setToolTipText("Formato: YYYY-MM-DD");
+        txtFechaFin = crearCampo();
+        txtFechaFin.setToolTipText("Formato: YYYY-MM-DD");
 
         cbEstado = new JComboBox<>();
         cbEstado.addItem("Activo");
         cbEstado.addItem("Inactivo");
         cbEstado.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        datos.add(crearFila("Nombre completo:", txtNombreCompleto));
-        datos.add(crearFila("Usuario (login):", txtUsuarioLogin));
-        datos.add(crearFila("Contrasena:", txtContrasena));
-        datos.add(crearFila("Rol:", cbRol));
+        datos.add(crearFila("Nombre:", txtNombre));
+        datos.add(crearFila("Descripcion:", txtDescripcion));
+        datos.add(crearFila("Tipo de descuento:", cbTipo));
+        datos.add(crearFila("Valor:", txtValor));
+        datos.add(crearFila("Fecha inicio (YYYY-MM-DD):", txtFechaInicio));
+        datos.add(crearFila("Fecha fin (YYYY-MM-DD):", txtFechaFin));
         datos.add(crearFila("Estado:", cbEstado));
 
         datos.add(Box.createVerticalStrut(15));
@@ -132,28 +132,23 @@ public class GestionUsuarios extends JFrame {
 
         JPanel buscarPanel = new JPanel(new BorderLayout(10, 0));
         buscarPanel.setBackground(Color.WHITE);
-
-        JLabel buscarLabel = new JLabel("Buscar usuario:");
+        JLabel buscarLabel = new JLabel("Buscar promocion:");
         buscarLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         buscarLabel.setForeground(CAFE);
-
         txtBuscar = new JTextField();
         JButton btnBuscar = crearBoton("BUSCAR", DORADO);
-
         buscarPanel.add(buscarLabel, BorderLayout.WEST);
         buscarPanel.add(txtBuscar, BorderLayout.CENTER);
         buscarPanel.add(btnBuscar, BorderLayout.EAST);
-
         panelTabla.add(buscarPanel, BorderLayout.NORTH);
 
-        String[] columnas = {"ID", "Nombre completo", "Usuario", "Rol", "Estado"};
+        String[] columnas = {"ID", "Nombre", "Descripcion", "Tipo", "Valor", "Inicio", "Fin", "Estado"};
         modelo = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int fila, int columna) {
                 return false;
             }
         };
-
         tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(35);
@@ -172,35 +167,29 @@ public class GestionUsuarios extends JFrame {
         principal.add(contenido, BorderLayout.CENTER);
         add(principal);
 
-        cargarUsuarios();
+        cargarPromociones();
 
         btnAgregar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                if (txtNombreCompleto.getText().isEmpty()
-                        || txtUsuarioLogin.getText().isEmpty()
-                        || txtContrasena.getPassword().length == 0) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Completa nombre, usuario y contrasena.", "Aviso", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
                 try {
-                    boolean ok = usuarioDAO.crearUsuario(
-                            txtNombreCompleto.getText(),
-                            txtUsuarioLogin.getText(),
-                            new String(txtContrasena.getPassword()),
-                            (String) cbRol.getSelectedItem()
-                    );
-                    if (ok) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario agregado correctamente.");
-                        limpiar();
-                        cargarUsuarios();
-                    }
+                    double valor = Double.parseDouble(txtValor.getText());
+                    Date inicio = Date.valueOf(txtFechaInicio.getText().trim());
+                    Date fin = Date.valueOf(txtFechaFin.getText().trim());
+
+                    promocionDAO.insertarPromocion(txtNombre.getText(), txtDescripcion.getText(),
+                            (String) cbTipo.getSelectedItem(), valor, inicio, fin);
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Promocion agregada correctamente.");
+                    limpiar();
+                    cargarPromociones();
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "El valor debe ser un numero.");
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(GestionPromociones.this,
+                            "Las fechas deben tener el formato YYYY-MM-DD.");
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Error al agregar usuario: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Error al agregar: " + ex.getMessage());
                 }
             }
         });
@@ -208,30 +197,29 @@ public class GestionUsuarios extends JFrame {
         btnEditar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (idSeleccionado == -1) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this, "Selecciona un usuario de la tabla.");
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Selecciona una promocion de la tabla.");
                     return;
                 }
-
                 try {
+                    double valor = Double.parseDouble(txtValor.getText());
+                    Date inicio = Date.valueOf(txtFechaInicio.getText().trim());
+                    Date fin = Date.valueOf(txtFechaFin.getText().trim());
                     int estado = cbEstado.getSelectedItem().equals("Activo") ? 1 : 0;
-                    boolean ok = usuarioDAO.actualizarUsuario(
-                            idSeleccionado,
-                            txtNombreCompleto.getText(),
-                            txtUsuarioLogin.getText(),
-                            new String(txtContrasena.getPassword()),
-                            (String) cbRol.getSelectedItem(),
-                            estado
-                    );
-                    if (ok) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario actualizado correctamente.");
-                        limpiar();
-                        cargarUsuarios();
-                    }
+
+                    promocionDAO.actualizarPromocion(idSeleccionado, txtNombre.getText(), txtDescripcion.getText(),
+                            (String) cbTipo.getSelectedItem(), valor, inicio, fin, estado);
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Promocion actualizada correctamente.");
+                    limpiar();
+                    cargarPromociones();
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "El valor debe ser un numero.");
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(GestionPromociones.this,
+                            "Las fechas deben tener el formato YYYY-MM-DD.");
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this,
-                            "Error al actualizar usuario: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Error al actualizar: " + ex.getMessage());
                 }
             }
         });
@@ -239,23 +227,19 @@ public class GestionUsuarios extends JFrame {
         btnEliminar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (idSeleccionado == -1) {
-                    JOptionPane.showMessageDialog(GestionUsuarios.this, "Selecciona un usuario.");
+                    JOptionPane.showMessageDialog(GestionPromociones.this, "Selecciona una promocion.");
                     return;
                 }
-
-                int respuesta = JOptionPane.showConfirmDialog(GestionUsuarios.this,
-                        "Deseas eliminar este usuario?", "Confirmar", JOptionPane.YES_NO_OPTION);
-
+                int respuesta = JOptionPane.showConfirmDialog(GestionPromociones.this,
+                        "Deseas eliminar esta promocion?", "Confirmar", JOptionPane.YES_NO_OPTION);
                 if (respuesta == JOptionPane.YES_OPTION) {
                     try {
-                        usuarioDAO.eliminarUsuario(idSeleccionado);
+                        promocionDAO.eliminarPromocion(idSeleccionado);
                         limpiar();
-                        cargarUsuarios();
+                        cargarPromociones();
                     } catch (SQLException ex) {
-                        JOptionPane.showMessageDialog(GestionUsuarios.this,
-                                "No se pudo eliminar (puede tener ventas o turnos asociados): " + ex.getMessage());
+                        JOptionPane.showMessageDialog(GestionPromociones.this, "Error al eliminar: " + ex.getMessage());
                     }
                 }
             }
@@ -275,11 +259,13 @@ public class GestionUsuarios extends JFrame {
                 if (fila == -1) return;
 
                 idSeleccionado = (int) modelo.getValueAt(fila, 0);
-                txtNombreCompleto.setText(modelo.getValueAt(fila, 1).toString());
-                txtUsuarioLogin.setText(modelo.getValueAt(fila, 2).toString());
-                txtContrasena.setText("");
-                cbRol.setSelectedItem(modelo.getValueAt(fila, 3).toString());
-                cbEstado.setSelectedItem(modelo.getValueAt(fila, 4).toString());
+                txtNombre.setText(modelo.getValueAt(fila, 1).toString());
+                txtDescripcion.setText(modelo.getValueAt(fila, 2).toString());
+                cbTipo.setSelectedItem(modelo.getValueAt(fila, 3).toString());
+                txtValor.setText(modelo.getValueAt(fila, 4).toString());
+                txtFechaInicio.setText(modelo.getValueAt(fila, 5).toString());
+                txtFechaFin.setText(modelo.getValueAt(fila, 6).toString());
+                cbEstado.setSelectedItem(modelo.getValueAt(fila, 7).toString());
             }
         });
 
@@ -289,28 +275,26 @@ public class GestionUsuarios extends JFrame {
                 String buscar = txtBuscar.getText().toLowerCase();
                 for (int i = 0; i < tabla.getRowCount(); i++) {
                     String nombre = tabla.getValueAt(i, 1).toString().toLowerCase();
-                    String login = tabla.getValueAt(i, 2).toString().toLowerCase();
-                    if (nombre.contains(buscar) || login.contains(buscar)) {
+                    if (nombre.contains(buscar)) {
                         tabla.setRowSelectionInterval(i, i);
                         return;
                     }
                 }
-                JOptionPane.showMessageDialog(GestionUsuarios.this, "Usuario no encontrado.");
+                JOptionPane.showMessageDialog(GestionPromociones.this, "Promocion no encontrada.");
             }
         });
 
         setVisible(true);
     }
 
-    private void cargarUsuarios() {
+    private void cargarPromociones() {
         modelo.setRowCount(0);
         try {
-            List<Object[]> lista = usuarioDAO.listarUsuarios();
-            for (Object[] fila : lista) {
+            for (Object[] fila : promocionDAO.listarTodas()) {
                 modelo.addRow(fila);
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar usuarios: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar promociones: " + e.getMessage());
         }
     }
 
@@ -325,11 +309,9 @@ public class GestionUsuarios extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 5));
         panel.setBackground(Color.WHITE);
         panel.setMaximumSize(new Dimension(270, 45));
-
         JLabel etiqueta = new JLabel(nombre);
         etiqueta.setFont(new Font("Segoe UI", Font.BOLD, 13));
         etiqueta.setForeground(CAFE);
-
         panel.add(etiqueta, BorderLayout.NORTH);
         panel.add(campo, BorderLayout.CENTER);
         return panel;
@@ -348,10 +330,12 @@ public class GestionUsuarios extends JFrame {
 
     private void limpiar() {
         idSeleccionado = -1;
-        txtNombreCompleto.setText("");
-        txtUsuarioLogin.setText("");
-        txtContrasena.setText("");
-        cbRol.setSelectedIndex(0);
+        txtNombre.setText("");
+        txtDescripcion.setText("");
+        txtValor.setText("");
+        txtFechaInicio.setText("");
+        txtFechaFin.setText("");
+        cbTipo.setSelectedIndex(0);
         cbEstado.setSelectedIndex(0);
         tabla.clearSelection();
     }
@@ -360,7 +344,7 @@ public class GestionUsuarios extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new GestionUsuarios();
+                new GestionPromociones();
             }
         });
     }
