@@ -497,24 +497,24 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         JPanel grid = new JPanel(new GridLayout(0, 3, 20, 20));
         grid.setBackground(CREAM);
 
-        grid.add(buildCardCategoria("Desayunos", "20 platillos para empezar el dia",
+        grid.add(buildCardCategoria("Desayunos", "20 platillos para empezar el dia", null,
                 () -> irACategoria("Desayunos", productosDesayunos())));
-        grid.add(buildCardCategoria("Almuerzos y cenas", "Hamburguesas y pollo",
+        grid.add(buildCardCategoria("Almuerzos y cenas", "Hamburguesas y pollo", "comida/hamburguesas/bigmac.png",
                 () -> irACategoria("Almuerzos y Cenas", productosAlmuerzos())));
-        grid.add(buildCardCategoria("Postres", "Dulce final",
+        grid.add(buildCardCategoria("Postres", "Dulce final", null,
                 () -> irACategoria("Postres", productosPostres())));
-        grid.add(buildCardCategoria("Bebidas", "Frias y calientes",
+        grid.add(buildCardCategoria("Bebidas", "Frias y calientes", null,
                 () -> irACategoria("Bebidas", productosBebidas())));
-        grid.add(buildCardCategoria("Antojos", "Papas y snacks",
+        grid.add(buildCardCategoria("Antojos", "Papas y snacks", "comida/pollo/10_mcnuggets_de_pollo.png",
                 () -> irACategoria("Antojos", productosAntojos())));
-        grid.add(buildCardCategoria("Cajita Feliz", "Hamburguesa o Nuggets",
+        grid.add(buildCardCategoria("Cajita Feliz", "Hamburguesa o Nuggets", "comida/cajitas/cajita_mini_rex.png",
                 this::irACajitaFeliz));
 
         wrap.add(grid, BorderLayout.CENTER);
         return wrap;
     }
 
-    private JPanel buildCardCategoria(String label, String tag, Runnable onClick) {
+    private JPanel buildCardCategoria(String label, String tag, String rutaImagen, Runnable onClick) {
         JPanel card = new TarjetaCategoria(new BorderLayout(22, 0));
         card.setBackground(Color.WHITE);
 
@@ -528,7 +528,7 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         card.setBorder(bordeNormal);
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        card.add(placeholderImagen(120, 120), BorderLayout.WEST);
+        card.add(placeholderImagen(120, 120, rutaImagen), BorderLayout.WEST);
 
         JPanel textPanel = new JPanel();
         textPanel.setOpaque(false);
@@ -633,7 +633,7 @@ private void registrarVenta(String metodoPagoSeleccionado) {
             @Override public void mouseExited(MouseEvent e) { card.setBorder(bordeNormal); card.setBackground(Color.WHITE); }
         });
 
-        JComponent imagen = placeholderImagenConTexto(200, 120, "Imagen aqui");
+        JComponent imagen = placeholderImagenConTexto(200, 120, "Imagen aqui", p.imagen);
         imagen.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(imagen);
         card.add(Box.createVerticalStrut(10));
@@ -662,42 +662,83 @@ private void registrarVenta(String metodoPagoSeleccionado) {
     }
 
     private JComponent placeholderImagen(int w, int h) {
-        return new ImagePlaceholder(w, h);
+        return placeholderImagen(w, h, null);
     }
 
+    private JComponent placeholderImagen(int w, int h, String rutaImagen) {
+        return new ImagePlaceholder(w, h, rutaImagen);
+    }
+
+    // ya no le pongo el texto "Imagen aqui" cuando SI hay foto real,
+    // solo cuando todavia no se ha asignado ninguna imagen al producto
     private JComponent placeholderImagenConTexto(int w, int h, String texto) {
+        return placeholderImagenConTexto(w, h, texto, null);
+    }
+
+    private JComponent placeholderImagenConTexto(int w, int h, String texto, String rutaImagen) {
         JPanel wrap = new JPanel();
         wrap.setLayout(new BoxLayout(wrap, BoxLayout.Y_AXIS));
         wrap.setOpaque(false);
 
-        ImagePlaceholder img = new ImagePlaceholder(w, h);
+        ImagePlaceholder img = new ImagePlaceholder(w, h, rutaImagen);
         img.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel caption = new JLabel(texto);
-        caption.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        caption.setForeground(INK_SOFT);
-        caption.setAlignmentX(Component.LEFT_ALIGNMENT);
-        caption.setBorder(new EmptyBorder(4, 2, 0, 0));
-
         wrap.add(img);
-        wrap.add(caption);
+
+        if (rutaImagen == null) {
+            JLabel caption = new JLabel(texto);
+            caption.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            caption.setForeground(INK_SOFT);
+            caption.setAlignmentX(Component.LEFT_ALIGNMENT);
+            caption.setBorder(new EmptyBorder(4, 2, 0, 0));
+            wrap.add(caption);
+        }
+
         return wrap;
     }
 
-    // el recuadro vacio pa las fotos, mi compa las va a poner despues
+    // el recuadro pa las fotos: si el producto trae "imagen" y el archivo
+    // existe en /imagenes/ lo pinta de una vez; si no lo encuentra (o el
+    // producto todavia no tiene foto asignada), cae al dibujito de
+    // placeholder de siempre pa que nunca truene por una imagen faltante
     static class ImagePlaceholder extends JComponent {
         private final int w, h;
+        private Image imagen;
+
         ImagePlaceholder(int w, int h) {
+            this(w, h, null);
+        }
+
+        ImagePlaceholder(int w, int h, String rutaImagen) {
             this.w = w;
             this.h = h;
             setPreferredSize(new Dimension(w, h));
             setMaximumSize(new Dimension(w, h));
             setMinimumSize(new Dimension(w, h));
             setOpaque(false);
+            if (rutaImagen != null) {
+                java.net.URL url = Chiksxburgermenu.class.getResource("/imagenes/" + rutaImagen);
+                if (url != null) {
+                    imagen = new ImageIcon(url).getImage();
+                }
+            }
         }
+
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (imagen != null) {
+                // fondo blanco + recorte con esquinas redondeadas, pa que
+                // las fotos con fondo transparente no se vean con bordes feos
+                g2.setClip(new RoundRectangle2D.Float(0, 0, w, h, 14, 14));
+                g2.setColor(Color.WHITE);
+                g2.fillRect(0, 0, w, h);
+                // el drawImage con ImageObserver "this" hace que repinte solo
+                // cuando la imagen ya termino de cargar (por si tarda un toque)
+                g2.drawImage(imagen, 0, 0, w, h, this);
+                g2.dispose();
+                return;
+            }
 
             g2.setColor(CREAM_2);
             g2.fillRoundRect(0, 0, w, h, 14, 14);
@@ -943,7 +984,7 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         contenido.setBackground(CREAM);
         contenido.setBorder(new EmptyBorder(22, 24, 22, 24));
 
-        JComponent imagen = placeholderImagenConTexto(390, 220, "Imagen aqui");
+        JComponent imagen = placeholderImagenConTexto(390, 220, "Imagen aqui", p.imagen);
         imagen.setAlignmentX(Component.LEFT_ALIGNMENT);
         contenido.add(imagen);
         contenido.add(Box.createVerticalStrut(16));
@@ -1211,15 +1252,22 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         final double precio;
         final boolean permiteCombo;
 
+        final String imagen; // ruta dentro de /imagenes/, ej: "comida/hamburguesas/bigmac.png". null = sin foto todavia
+
         Producto(String nombre, String descripcion, double precio) {
-            this(nombre, descripcion, precio, false);
+            this(nombre, descripcion, precio, false, null);
         }
 
         Producto(String nombre, String descripcion, double precio, boolean permiteCombo) {
+            this(nombre, descripcion, precio, permiteCombo, null);
+        }
+
+        Producto(String nombre, String descripcion, double precio, boolean permiteCombo, String imagen) {
             this.nombre = nombre;
             this.descripcion = descripcion;
             this.precio = precio;
             this.permiteCombo = permiteCombo;
+            this.imagen = imagen;
         }
     }
 
@@ -1260,26 +1308,46 @@ private void registrarVenta(String metodoPagoSeleccionado) {
 
     private static List<Producto> productosAlmuerzos() {
         return Arrays.asList(
-            new Producto("T-Rex Doble", "Dos carnes de res, doble queso cheddar, tocino y salsa especial.", 55, true),
-            new Producto("Raptor Clasica", "Carne de res, lechuga, tomate, cebolla y queso americano.", 38, true),
-            new Producto("Triceratops BBQ", "Carne de res con salsa BBQ, aros de cebolla y queso ahumado.", 48, true),
-            new Producto("Diplodocus Gigante", "Carne triple con queso, tocino y salsa secreta Chiksx.", 62, true),
-            new Producto("Velociraptor Picante", "Carne de res con jalapenos, queso pepper jack y mayo chipotle.", 46, true),
-            new Producto("Estegosaurio Clasica", "Carne de res con queso suizo y champinones salteados.", 44, true),
-            new Producto("Pterodactilo Crispy", "Filete de pollo empanizado con lechuga y mayo de ajo.", 42, true),
-            new Producto("Alosaurio Buffalo", "Filete de pollo banado en salsa buffalo con queso azul.", 45, true),
-            new Producto("Braquiosaurio Doble Pollo", "Doble filete de pollo con tocino y queso cheddar.", 50, true),
-            new Producto("Compsognathus Junior", "Hamburguesa sencilla ideal para los mas pequenos.", 28, true),
-            new Producto("Ankylosaurus Fuego", "Carne de res con salsa picante habanero y queso pepper jack.", 47, true),
-            new Producto("Spinosaurus Especial", "Carne de res, doble tocino, huevo frito y queso cheddar.", 58, true),
-            new Producto("Iguanodon Clasica de Pollo", "Filete de pollo a la parrilla con vegetales frescos.", 40, true),
-            new Producto("Parasaurolophus BBQ Pollo", "Filete de pollo con salsa BBQ y aros de cebolla.", 44, true),
-            new Producto("Megalosaurio Suprema", "Carne de res, queso doble, tocino y aderezo Chiksx.", 56, true),
-            new Producto("Utahraptor Ranch", "Filete de pollo empanizado con salsa ranch y tocino.", 43, true),
-            new Producto("Carnotaurus Extreme", "Carne de res picante con jalapenos y queso pepper jack.", 49, true),
-            new Producto("Therizinosaurus Verde", "Carne de res con guacamole, lechuga y pico de gallo.", 41, true),
-            new Producto("Dino Nuggets Combo", "Nuggets de pollo crujientes con papas y salsa a elegir.", 39),
-            new Producto("Tiranosaurio Familiar", "Combo doble de hamburguesas T-Rex para compartir.", 95)
+            new Producto("T-Rex Doble", "Dos carnes de res, doble queso cheddar, tocino y salsa especial.", 55, true,
+                    "comida/hamburguesas/cuarto_de_libra_bacon_doble_con_queso.png"),
+            new Producto("Raptor Clasica", "Carne de res, lechuga, tomate, cebolla y queso americano.", 38, true,
+                    "comida/hamburguesas/hamburguesa_con_queso.png"),
+            new Producto("Triceratops BBQ", "Carne de res con salsa BBQ, aros de cebolla y queso ahumado.", 48, true,
+                    "comida/gourmet/smoke_tocino_gourmet_de_res.png"),
+            new Producto("Diplodocus Gigante", "Carne triple con queso, tocino y salsa secreta Chiksx.", 62, true,
+                    "comida/hamburguesas/triple_hamburguesa_con_queso.png"),
+            new Producto("Velociraptor Picante", "Carne de res con jalapenos, queso pepper jack y mayo chipotle.", 46, true,
+                    "comida/gourmet/pico_guacamol_gourmet_res.png"),
+            new Producto("Estegosaurio Clasica", "Carne de res con queso suizo y champinones salteados.", 44, true,
+                    "comida/hamburguesas/quesoburguesa.png"),
+            new Producto("Pterodactilo Crispy", "Filete de pollo empanizado con lechuga y mayo de ajo.", 42, true,
+                    "comida/pollo/mccrispy_chicken_deluxe.png"),
+            new Producto("Alosaurio Buffalo", "Filete de pollo banado en salsa buffalo con queso azul.", 45, true,
+                    "comida/pollo/pollo_mc_crispy_bacon_ranch.png"),
+            new Producto("Braquiosaurio Doble Pollo", "Doble filete de pollo con tocino y queso cheddar.", 50, true,
+                    "comida/pollo/sandwich_mcpollo_doble.png"),
+            new Producto("Compsognathus Junior", "Hamburguesa sencilla ideal para los mas pequenos.", 28, true,
+                    "comida/hamburguesas/hamburguesa.png"),
+            new Producto("Ankylosaurus Fuego", "Carne de res con salsa picante habanero y queso pepper jack.", 47, true,
+                    "comida/hamburguesas/big_tasty_bacon.png"),
+            new Producto("Spinosaurus Especial", "Carne de res, doble tocino, huevo frito y queso cheddar.", 58, true,
+                    "comida/hamburguesas/cuarto_de_libra_bacon_con_queso.png"),
+            new Producto("Iguanodon Clasica de Pollo", "Filete de pollo a la parrilla con vegetales frescos.", 40, true,
+                    "comida/pollo/big_tasty_de_pollo.png"),
+            new Producto("Parasaurolophus BBQ Pollo", "Filete de pollo con salsa BBQ y aros de cebolla.", 44, true,
+                    "comida/pollo/pollo_mc_crispy_dos_piezas.png"),
+            new Producto("Megalosaurio Suprema", "Carne de res, queso doble, tocino y aderezo Chiksx.", 56, true,
+                    "comida/hamburguesas/doble_cuarto_de_libra_con_queso.png"),
+            new Producto("Utahraptor Ranch", "Filete de pollo empanizado con salsa ranch y tocino.", 43, true,
+                    "comida/pollo/pollo_mc_crispy_1_pieza.png"),
+            new Producto("Carnotaurus Extreme", "Carne de res picante con jalapenos y queso pepper jack.", 49, true,
+                    "comida/hamburguesas/big_tasty_bacon_doble.png"),
+            new Producto("Therizinosaurus Verde", "Carne de res con guacamole, lechuga y pico de gallo.", 41, true,
+                    "comida/gourmet/pico_guacamol_gourmetdoble.png"),
+            new Producto("Dino Nuggets Combo", "Nuggets de pollo crujientes con papas y salsa a elegir.", 39, false,
+                    "comida/pollo/10_mcnuggets_de_pollo.png"),
+            new Producto("Tiranosaurio Familiar", "Combo doble de hamburguesas T-Rex para compartir.", 95, false,
+                    "comida/hamburguesas/doble_big_mac.png")
         );
     }
 
@@ -1323,7 +1391,8 @@ private void registrarVenta(String metodoPagoSeleccionado) {
             new Producto("Papas Fritas Rex", "Papas a la francesa crujientes.", 20),
             new Producto("Papas Gajo Jurasicas", "Papas gajo sazonadas con especias.", 24),
             new Producto("Aros de Cebolla Dino", "Aros de cebolla empanizados y crujientes.", 22),
-            new Producto("Nuggets de Pollo Raptor", "Nuggets de pollo crujientes, 6 piezas.", 28),
+            new Producto("Nuggets de Pollo Raptor", "Nuggets de pollo crujientes, 6 piezas.", 28, false,
+                    "comida/pollo/pollo_mc_crispy_10_piezas.png"),
             new Producto("Alitas BBQ Triceratops", "Alitas banadas en salsa BBQ.", 38),
             new Producto("Alitas Picantes Velociraptor", "Alitas banadas en salsa picante.", 38),
             new Producto("Quesadilla Fosil", "Quesadilla de queso derretido con tortilla de harina.", 26),
@@ -1335,17 +1404,23 @@ private void registrarVenta(String metodoPagoSeleccionado) {
 
     private static List<Producto> cajitaConHamburguesa() {
         return Arrays.asList(
-            new Producto("Cajita Mini Rex", "Hamburguesa sencilla, papas chicas y bebida a elegir.", 32),
-            new Producto("Cajita Diplodocus", "Hamburguesa con queso, papas chicas y bebida a elegir.", 38),
-            new Producto("Cajita Doble Rex", "Dos hamburguesas sencillas, papas chicas y bebida a elegir.", 45)
+            new Producto("Cajita Mini Rex", "Hamburguesa sencilla, papas chicas y bebida a elegir.", 32, false,
+                    "comida/cajitas/cajita_mini_rex.png"),
+            new Producto("Cajita Diplodocus", "Hamburguesa con queso, papas chicas y bebida a elegir.", 38, false,
+                    "comida/cajitas/cajita_diplodocus.png"),
+            new Producto("Cajita Doble Rex", "Dos hamburguesas sencillas, papas chicas y bebida a elegir.", 45, false,
+                    "comida/cajitas/cajita_doble_rex.png")
         );
     }
 
     private static List<Producto> cajitaConNuggets() {
         return Arrays.asList(
-            new Producto("Cajita Raptor 4", "4 piezas de nuggets, papas chicas y bebida a elegir.", 30),
-            new Producto("Cajita Raptor 6", "6 piezas de nuggets, papas chicas y bebida a elegir.", 36),
-            new Producto("Cajita Fiesta Dino", "Nuggets y papas grandes para compartir, con dos bebidas.", 58)
+            new Producto("Cajita Raptor 4", "4 piezas de nuggets, papas chicas y bebida a elegir.", 30, false,
+                    "comida/cajitas/cajita_raptor_4.png"),
+            new Producto("Cajita Raptor 6", "6 piezas de nuggets, papas chicas y bebida a elegir.", 36, false,
+                    "comida/cajitas/cajita_raptor_6.png"),
+            new Producto("Cajita Fiesta Dino", "Nuggets y papas grandes para compartir, con dos bebidas.", 58, false,
+                    "comida/cajitas/cajita_fiesta_dino.png")
         );
     }
 
