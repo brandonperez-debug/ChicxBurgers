@@ -1,14 +1,14 @@
 package main;
 
-import gui.Login;
+import gui.pantallaCarga;
 
 
 public class Main {
 
    
     public static void main(String[] args) {
-         Login login = new Login();
-        login.setVisible(true);
+         pantallaCarga pantallaCarga = new pantallaCarga();
+        pantallaCarga.iniciarCarga();
     }
     
 }
