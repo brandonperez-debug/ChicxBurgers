@@ -83,7 +83,7 @@ public class Chiksxburgermenu extends JFrame {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(CREAM);
 
-        root.add(buildHeader(), BorderLayout.NORTH);
+        root.add(buildHero(), BorderLayout.NORTH);
         sidebar = buildSidebar();
 
         menuPrincipal = new JPanel();
@@ -255,44 +255,44 @@ public class Chiksxburgermenu extends JFrame {
         mostrarCategoriaEnScroll();
     }
 
-    private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(MAROON);
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 4, 0, GOLD));
-        header.setPreferredSize(new Dimension(10, 76));
-
-        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        logoPanel.setOpaque(false);
-        logoPanel.setBorder(new EmptyBorder(0, 28, 0, 0));
-
-        // este icono ahora es el botoncito que abre y cierra la barra lateral
-        JLabel mark = new JLabel(buildLogoIcon(40));
-        mark.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        mark.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                toggleSidebar();
+    
+// carga un png y lo escala a un alto fijo sin deformarlo
+private Icon cargarLogo(String ruta, int altoDeseado) {
+    java.awt.image.BufferedImage original = null;
+    try {
+        java.net.URL url = Chiksxburgermenu.class.getResource(ruta);
+        if (url != null) {
+            original = javax.imageio.ImageIO.read(url);
+        } else {
+            // plan B: buscarlo directo en la carpeta src del proyecto
+            java.io.File archivo = new java.io.File("src" + ruta);
+            if (archivo.exists()) {
+                original = javax.imageio.ImageIO.read(archivo);
+            } else {
+                System.out.println("NO se encontro el logo. Ruta: " + ruta
+                        + " | Carpeta de trabajo: " + System.getProperty("user.dir"));
             }
-        });
-        logoPanel.add(mark);
-
-        JPanel logoText = new JPanel();
-        logoText.setOpaque(false);
-        logoText.setLayout(new BoxLayout(logoText, BoxLayout.Y_AXIS));
-        JLabel title = new JLabel("CHICXBURGER");
-        title.setFont(FONT_LOGO);
-        title.setForeground(CREAM);
-        JLabel subtitle = new JLabel("SABOR QUE ALIMENTA");
-        subtitle.setFont(new Font("SansSerif", Font.BOLD, 10));
-        subtitle.setForeground(GOLD);
-        logoText.add(title);
-        logoText.add(subtitle);
-        logoPanel.add(logoText);
-
-        header.add(logoPanel, BorderLayout.WEST);
-        // ya no va nada del lado derecho, esas opciones ahora viven en la barra lateral
-        return header;
+        }
+    } catch (java.io.IOException e) {
+        System.out.println("Error leyendo el logo: " + e.getMessage());
     }
 
+    if (original == null) {
+        return buildLogoIcon(altoDeseado); // ultimo recurso: icono dibujado
+    }
+
+    int anchoNuevo = original.getWidth() * altoDeseado / original.getHeight();
+
+    java.awt.image.BufferedImage salida = new java.awt.image.BufferedImage(
+            anchoNuevo, altoDeseado, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2 = salida.createGraphics();
+    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    g2.drawImage(original, 0, 0, anchoNuevo, altoDeseado, null);
+    g2.dispose();
+
+    return new ImageIcon(salida);
+}
     // la barra lateral, se agrega/quita del panel raiz cuando le dan click al logo
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel();
@@ -445,59 +445,64 @@ public class Chiksxburgermenu extends JFrame {
     }
 
     private JPanel buildHero() {
-        HeroPanel hero = new HeroPanel();
-        hero.setLayout(new BorderLayout());
-        hero.setBorder(new EmptyBorder(56, 32, 74, 32));
-        hero.setAlignmentX(Component.LEFT_ALIGNMENT);
+    HeroPanel hero = new HeroPanel();
+    hero.setLayout(new BorderLayout());
+    hero.setBorder(new EmptyBorder(56, 32, 74, 32));
+    hero.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel contenido = new JPanel();
-        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
-        contenido.setOpaque(false);
+    JPanel contenido = new JPanel();
+    contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
+    contenido.setOpaque(false);
 
-        JLabel eyebrow = new JLabel("  Recien desenterrado esta semana");
-        eyebrow.setFont(new Font("SansSerif", Font.BOLD, 12));
-        eyebrow.setForeground(AMBAR_CLARO);
-        eyebrow.setOpaque(true);
-        eyebrow.setBackground(BASALTO_2);
-        eyebrow.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(AMBAR.getRed(), AMBAR.getGreen(), AMBAR.getBlue(), 150), 1, true),
-                new EmptyBorder(6, 14, 6, 14)));
-        eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
-        eyebrow.setMaximumSize(eyebrow.getPreferredSize());
+    JLabel eyebrow = new JLabel("  Recien desenterrado esta semana");
+    eyebrow.setFont(new Font("SansSerif", Font.BOLD, 12));
+    eyebrow.setForeground(AMBAR_CLARO);
+    eyebrow.setOpaque(true);
+    eyebrow.setBackground(BASALTO_2);
+    eyebrow.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(AMBAR.getRed(), AMBAR.getGreen(), AMBAR.getBlue(), 150), 1, true),
+            new EmptyBorder(6, 14, 6, 14)));
+    eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
+    eyebrow.setMaximumSize(eyebrow.getPreferredSize());
 
-        JLabel h1 = new JLabel("<html><div style='width:520px'>66 millones de años de "
-                + "<font color='#e2a35a'>sabor</font>, listo en minutos.</div></html>");
-        h1.setFont(FONT_H1);
-        h1.setForeground(CREAM);
-        h1.setBorder(new EmptyBorder(16, 0, 10, 0));
-        h1.setAlignmentX(Component.LEFT_ALIGNMENT);
+    JLabel h1 = new JLabel("<html><div style='width:520px'>66 millones de años de "
+            + "<font color='#e2a35a'>sabor</font>, listo en minutos.</div></html>");
+    h1.setFont(FONT_H1);
+    h1.setForeground(CREAM);
+    h1.setBorder(new EmptyBorder(16, 0, 10, 0));
+    h1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel p = new JLabel("<html><div style='width:480px'>Cada platillo lleva el nombre de una especie distinta. Elige tu era, arma tu combo, y dejanos el resto.</div></html>");
-        p.setFont(FONT_SUB);
-        p.setForeground(CREAM_2);
-        p.setBorder(new EmptyBorder(0, 0, 24, 0));
-        p.setAlignmentX(Component.LEFT_ALIGNMENT);
+    JLabel p = new JLabel("<html><div style='width:480px'>Cada platillo lleva el nombre de una especie distinta. Elige tu era, arma tu combo, y dejanos el resto.</div></html>");
+    p.setFont(FONT_SUB);
+    p.setForeground(CREAM_2);
+    p.setBorder(new EmptyBorder(0, 0, 24, 0));
+    p.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel huellas = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 0));
-        huellas.setOpaque(false);
-        huellas.setBorder(new EmptyBorder(30, 0, 0, 0));
-        huellas.setAlignmentX(Component.LEFT_ALIGNMENT);
-        float[] alfas = {0.6f, 0.4f, 0.25f};
-        int[] corrimientos = {0, 12, 22};
-        for (int i = 0; i < 3; i++) {
-            JLabel pie = new JLabel(crearIconoHuella(22, 28, alfas[i]));
-            pie.setBorder(new EmptyBorder(corrimientos[i], 0, 0, 0));
-            huellas.add(pie);
-        }
-
-        contenido.add(eyebrow);
-        contenido.add(h1);
-        contenido.add(p);
-        contenido.add(huellas);
-
-        hero.add(contenido, BorderLayout.WEST);
-        return hero;
+    JPanel huellas = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 0));
+    huellas.setOpaque(false);
+    huellas.setBorder(new EmptyBorder(30, 0, 0, 0));
+    huellas.setAlignmentX(Component.LEFT_ALIGNMENT);
+    float[] alfas = {0.6f, 0.4f, 0.25f};
+    int[] corrimientos = {0, 12, 22};
+    for (int i = 0; i < 3; i++) {
+        JLabel pie = new JLabel(crearIconoHuella(22, 28, alfas[i]));
+        pie.setBorder(new EmptyBorder(corrimientos[i], 0, 0, 0));
+        huellas.add(pie);
     }
+
+    contenido.add(eyebrow);
+    contenido.add(h1);
+    contenido.add(p);
+    contenido.add(huellas);
+
+   hero.add(contenido, BorderLayout.WEST);
+
+    JLabel logoHero = new JLabel(cargarLogo("/imagenes/logo/chicxburgers.png", 220));
+    logoHero.setBorder(new EmptyBorder(0, 0, 0, 60));
+    hero.add(logoHero, BorderLayout.EAST);
+
+    return hero;
+}
 
     static class HeroPanel extends JPanel {
         @Override protected void paintComponent(Graphics g) {

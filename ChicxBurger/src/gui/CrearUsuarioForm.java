@@ -23,7 +23,7 @@ public class CrearUsuarioForm extends JFrame {
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
 
     public CrearUsuarioForm() {
-        setTitle("Chiksx Burger - Crear usuario");
+        setTitle("Chicx Burger - Crear usuario");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(460, 560);
         setMinimumSize(new Dimension(420, 520));
@@ -49,7 +49,7 @@ public class CrearUsuarioForm extends JFrame {
         title.setForeground(Chiksxburgermenu.CREAM);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel subtitle = new JLabel("Registra un nuevo empleado (Administrador o Cajero)");
+        JLabel subtitle = new JLabel("Registra un nuevo empleado (Administrador o Cajero) para el sistema.");
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
         subtitle.setForeground(Chiksxburgermenu.GOLD);
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);

@@ -190,7 +190,7 @@ CREATE TABLE DETALLE_VENTA (
  
 INSERT INTO USUARIO (nombre_completo, usuario_login, contrasena, rol, estado) VALUES
 ('Anthony Perez', 'admin1', '123456', 'Administrador', 1),
-('Brandon Perez', 'cajero1', '123456', 'Cajero', 1);
+('Brandon Perez', 'cajero1', '123456', 'Cajero', 2);
 
 INSERT INTO PROVEEDOR (nombre_proveedor, telefono, correo, direccion) VALUES
 ('Distribuidora Central', '2222-1111', 'ventas@distcentral.com', 'Zona 4, Guatemala');

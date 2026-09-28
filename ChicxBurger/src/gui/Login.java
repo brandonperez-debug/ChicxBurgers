@@ -667,60 +667,6 @@ public class Login extends JFrame {
                 e -> iniciarSesion()
         );
 
-        JButton btnCrearCuenta =
-                new JButton(
-                        "Crear una cuenta nueva"
-                );
-
-        btnCrearCuenta.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        btnCrearCuenta.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        46
-                )
-        );
-
-        btnCrearCuenta.setFont(
-                new Font(
-                        "SansSerif",
-                        Font.BOLD,
-                        14
-                )
-        );
-
-        btnCrearCuenta.setForeground(
-                Chiksxburgermenu.BROWN_950
-        );
-
-        btnCrearCuenta.setBackground(
-                Chiksxburgermenu.CREAM_2
-        );
-
-        btnCrearCuenta.setFocusPainted(false);
-
-        btnCrearCuenta.setBorder(
-                BorderFactory.createLineBorder(
-                        Chiksxburgermenu.CREAM_2,
-                        2,
-                        true
-                )
-        );
-
-        btnCrearCuenta.setCursor(
-                Cursor.getPredefinedCursor(
-                        Cursor.HAND_CURSOR
-                )
-        );
-
-        // este boton nomas cierra el login y abre el formulario de crear cuenta
-        btnCrearCuenta.addActionListener(
-                e -> {
-                    dispose();
-                    new CrearUsuarioForm().setVisible(true);
-                }
-        );
-
         tarjeta.add(huevo);
         tarjeta.add(titulo);
         tarjeta.add(subtitulo);
@@ -731,7 +677,6 @@ public class Login extends JFrame {
         tarjeta.add(chkMostrar);
         tarjeta.add(btnIngresar);
         tarjeta.add(Box.createVerticalStrut(12));
-        tarjeta.add(btnCrearCuenta);
 
         form.add(tarjeta);
 
