@@ -1,5 +1,6 @@
 package gui;
 
+import ChicxBurgerDB.ProductoDAO;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -7,23 +8,19 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import ChicxBurgerDB.ProductoDAO;
 import main.Conexion.conexion;
-import java.sql.*;
-import java.util.HashMap;
 
-// pantalla del menu, ya casi la termino jaja
-// intente que se pareciera al de mcdonalds pero con los colores de nosotros
 public class Chiksxburgermenu extends JFrame {
 
-    // colores de la marca, no muevan esto porfa
     static final Color BROWN_950 = new Color(0x3A, 0x18, 0x10);
     static final Color MAROON    = new Color(0x5C, 0x27, 0x18);
     static final Color RED       = new Color(0xC1, 0x27, 0x2D);
@@ -34,7 +31,6 @@ public class Chiksxburgermenu extends JFrame {
     static final Color INK       = new Color(0x2B, 0x18, 0x10);
     static final Color INK_SOFT  = new Color(0x6B, 0x4A, 0x3A);
 
-    // colores nuevos pa la entrada del menu, tipo sitio de excavacion
     static final Color BASALTO     = new Color(0x24, 0x19, 0x14);
     static final Color BASALTO_2   = new Color(0x33, 0x24, 0x1C);
     static final Color AMBAR       = new Color(0xC9, 0x7A, 0x2B);
@@ -48,7 +44,6 @@ public class Chiksxburgermenu extends JFrame {
     static final Font FONT_TAG    = new Font("SansSerif", Font.PLAIN, 12);
     static final Font FONT_BREADCRUMB = new Font("SansSerif", Font.BOLD, 13);
 
-    // esto es para cambiar de pantalla sin abrir otra ventana
     private final JPanel categoriaContenedor = new JPanel();
     private JPanel menuPrincipal;
     private JScrollPane scroll;
@@ -56,14 +51,15 @@ public class Chiksxburgermenu extends JFrame {
     private JLabel navCarritoLink;
     private JComponent gridCategoriasPanel;
 
-    // aqui guardo lo que va llevando el cliente
+    // barra lateral que sale del logo, empieza escondida
+    private JPanel sidebar;
+    private boolean sidebarVisible = false;
+
     private final List<ItemPedido> carrito = new ArrayList<>();
     private final int idUsuarioActual;
     private final ProductoDAO productoDAO = new ProductoDAO();
     private final HashMap<String, Integer> metodosPagoMap = new HashMap<>();
 
-    // TODO: igual que en GestionPedidos, esto deberia venir de un TURNO
-    // abierto real. Debe existir una fila en TURNO con este id.
     private static final int ID_TURNO_ACTUAL = 1;
     private static final double EXTRA_COMBO = 18.0;
     private static final String[] OPCIONES_PERSONALIZACION = {
@@ -72,16 +68,13 @@ public class Chiksxburgermenu extends JFrame {
 
     public Chiksxburgermenu() {
         this(1);
-}
+    }
 
     public Chiksxburgermenu(int idUsuarioActual) {
         this.idUsuarioActual = idUsuarioActual;
         cargarMetodosPago();
         setTitle("ChicxBurger - Menu");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        // lo de Toolkit no me agarraba bien toda la pantalla, con esto le
-        // pido directo al sistema el area maxima que puede ocupar una
-        // ventana (la pantalla completa, descontando la barra de tareas)
         Rectangle limites = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         setBounds(limites);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -91,6 +84,7 @@ public class Chiksxburgermenu extends JFrame {
         root.setBackground(CREAM);
 
         root.add(buildHeader(), BorderLayout.NORTH);
+        sidebar = buildSidebar();
 
         menuPrincipal = new JPanel();
         menuPrincipal.setLayout(new BoxLayout(menuPrincipal, BoxLayout.Y_AXIS));
@@ -101,8 +95,6 @@ public class Chiksxburgermenu extends JFrame {
         categoriaContenedor.setLayout(new BoxLayout(categoriaContenedor, BoxLayout.Y_AXIS));
         categoriaContenedor.setBackground(CREAM);
 
-        // ojo no le cambien esto a cardlayout xq se ve todo chueco al regresar
-        // (ya me paso, se quedaba un espacio en blanco gigante abajo sin razon)
         scroll = new JScrollPane(menuPrincipal);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
@@ -123,109 +115,106 @@ public class Chiksxburgermenu extends JFrame {
     }
 
     private void cargarMetodosPago() {
-    String sql = "SELECT id_metodo_pago, nombre_metodo FROM METODO_PAGO";
-    try (Connection con = conexion.getConnection();
-         PreparedStatement ps = con.prepareStatement(sql);
-         ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-            metodosPagoMap.put(rs.getString("nombre_metodo"), rs.getInt("id_metodo_pago"));
+        String sql = "SELECT id_metodo_pago, nombre_metodo FROM METODO_PAGO";
+        try (Connection con = conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                metodosPagoMap.put(rs.getString("nombre_metodo"), rs.getInt("id_metodo_pago"));
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar metodos de pago: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(this, "Error al cargar metodos de pago: " + e.getMessage());
-    }
-}
-   
-private void registrarVenta(String metodoPagoSeleccionado) {
-
-    if (carrito.isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Tu carrito esta vacio.");
-        return;
     }
 
-    if (metodoPagoSeleccionado == null || !metodosPagoMap.containsKey(metodoPagoSeleccionado)) {
-        JOptionPane.showMessageDialog(this, "Selecciona un metodo de pago valido.");
-        return;
-    }
-    int idMetodoPago = metodosPagoMap.get(metodoPagoSeleccionado);
+    private void registrarVenta(String metodoPagoSeleccionado) {
 
-    double total = 0;
-    for (ItemPedido item : carrito) {
-        total += item.precio;
-    }
+        if (carrito.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tu carrito esta vacio.");
+            return;
+        }
 
-    Connection con = null;
+        if (metodoPagoSeleccionado == null || !metodosPagoMap.containsKey(metodoPagoSeleccionado)) {
+            JOptionPane.showMessageDialog(this, "Selecciona un metodo de pago valido.");
+            return;
+        }
+        int idMetodoPago = metodosPagoMap.get(metodoPagoSeleccionado);
 
-    try {
-        con = conexion.getConnection();
-        con.setAutoCommit(false);
+        double total = 0;
+        for (ItemPedido item : carrito) {
+            total += item.precio;
+        }
 
-        String sqlVenta = "INSERT INTO VENTA (total, descuento_total, id_usuario, id_metodo_pago, id_turno) "
-                + "VALUES (?, 0, ?, ?, ?)";
+        Connection con = null;
 
-        int idVentaGenerado;
+        try {
+            con = conexion.getConnection();
+            con.setAutoCommit(false);
 
-        try (PreparedStatement psVenta = con.prepareStatement(sqlVenta, Statement.RETURN_GENERATED_KEYS)) {
-            psVenta.setDouble(1, total);
-            psVenta.setInt(2, idUsuarioActual);
-            psVenta.setInt(3, idMetodoPago);
-            psVenta.setInt(4, ID_TURNO_ACTUAL);
-            psVenta.executeUpdate();
+            String sqlVenta = "INSERT INTO VENTA (total, descuento_total, id_usuario, id_metodo_pago, id_turno) "
+                    + "VALUES (?, 0, ?, ?, ?)";
 
-            try (ResultSet keys = psVenta.getGeneratedKeys()) {
-                if (keys.next()) {
-                    idVentaGenerado = keys.getInt(1);
-                } else {
-                    throw new SQLException("No se pudo obtener el id de la venta generada.");
+            int idVentaGenerado;
+
+            try (PreparedStatement psVenta = con.prepareStatement(sqlVenta, Statement.RETURN_GENERATED_KEYS)) {
+                psVenta.setDouble(1, total);
+                psVenta.setInt(2, idUsuarioActual);
+                psVenta.setInt(3, idMetodoPago);
+                psVenta.setInt(4, ID_TURNO_ACTUAL);
+                psVenta.executeUpdate();
+
+                try (ResultSet keys = psVenta.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        idVentaGenerado = keys.getInt(1);
+                    } else {
+                        throw new SQLException("No se pudo obtener el id de la venta generada.");
+                    }
+                }
+            }
+
+            String sqlDetalle = "INSERT INTO DETALLE_VENTA (id_venta, id_producto, cantidad, precio_unitario, subtotal) "
+                    + "VALUES (?, ?, 1, ?, ?)";
+
+            try (PreparedStatement psDetalle = con.prepareStatement(sqlDetalle)) {
+                for (ItemPedido item : carrito) {
+                    int idProducto = productoDAO.obtenerOCrearProductoPorNombre(item.nombreProducto, item.precio);
+
+                    psDetalle.setInt(1, idVentaGenerado);
+                    psDetalle.setInt(2, idProducto);
+                    psDetalle.setDouble(3, item.precio);
+                    psDetalle.setDouble(4, item.precio);
+                    psDetalle.addBatch();
+                }
+                psDetalle.executeBatch();
+            }
+
+            con.commit();
+
+            JOptionPane.showMessageDialog(this, "Pedido confirmado. No. de orden: " + idVentaGenerado);
+
+            carrito.clear();
+            actualizarContadorCarrito();
+            irACarrito();
+
+        } catch (SQLException e) {
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException ex) {
+                }
+            }
+            JOptionPane.showMessageDialog(this, "Error al confirmar el pedido: " + e.getMessage());
+
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true);
+                    con.close();
+                } catch (SQLException ex) {
                 }
             }
         }
-
-        String sqlDetalle = "INSERT INTO DETALLE_VENTA (id_venta, id_producto, cantidad, precio_unitario, subtotal) "
-                + "VALUES (?, ?, 1, ?, ?)";
-
-        try (PreparedStatement psDetalle = con.prepareStatement(sqlDetalle)) {
-            for (ItemPedido item : carrito) {
-                // obtiene o crea el producto real detras del nombre tematico
-                int idProducto = productoDAO.obtenerOCrearProductoPorNombre(item.nombreProducto, item.precio);
-
-                psDetalle.setInt(1, idVentaGenerado);
-                psDetalle.setInt(2, idProducto);
-                psDetalle.setDouble(3, item.precio);
-                psDetalle.setDouble(4, item.precio);
-                psDetalle.addBatch();
-            }
-            psDetalle.executeBatch();
-        }
-
-        con.commit();
-
-        JOptionPane.showMessageDialog(this, "Pedido confirmado. No. de orden: " + idVentaGenerado);
-
-        carrito.clear();
-        actualizarContadorCarrito();
-        irACarrito();
-
-    } catch (SQLException e) {
-        if (con != null) {
-            try {
-                con.rollback();
-            } catch (SQLException ex) {
-                // si ni siquiera se puede revertir, solo lo mostramos abajo
-            }
-        }
-        JOptionPane.showMessageDialog(this, "Error al confirmar el pedido: " + e.getMessage());
-
-    } finally {
-        if (con != null) {
-            try {
-                con.setAutoCommit(true);
-                con.close();
-            } catch (SQLException ex) {
-                // conexion ya cerrada o invalida
-            }
-        }
     }
-}
 
     private void mostrarCategoriaEnScroll() {
         scroll.setViewportView(categoriaContenedor);
@@ -276,7 +265,14 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         logoPanel.setOpaque(false);
         logoPanel.setBorder(new EmptyBorder(0, 28, 0, 0));
 
+        // este icono ahora es el botoncito que abre y cierra la barra lateral
         JLabel mark = new JLabel(buildLogoIcon(40));
+        mark.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        mark.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                toggleSidebar();
+            }
+        });
         logoPanel.add(mark);
 
         JPanel logoText = new JPanel();
@@ -292,20 +288,118 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         logoText.add(subtitle);
         logoPanel.add(logoText);
 
-        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        navPanel.setOpaque(false);
-        navPanel.setBorder(new EmptyBorder(0, 0, 0, 28));
-
-        navMenuLink = navLink("Menu", true, this::irAMenuPrincipal);
-        navPanel.add(navMenuLink);
-        navPanel.add(navLink("Promociones & Apps", false, null));
-        navPanel.add(navLink("Cajita Feliz", false, this::irACajitaFeliz));
-        navCarritoLink = navLink("Carrito", false, this::irACarrito);
-        navPanel.add(navCarritoLink);
-
         header.add(logoPanel, BorderLayout.WEST);
-        header.add(navPanel, BorderLayout.EAST);
+        // ya no va nada del lado derecho, esas opciones ahora viven en la barra lateral
         return header;
+    }
+
+    // la barra lateral, se agrega/quita del panel raiz cuando le dan click al logo
+    private JPanel buildSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBackground(MAROON);
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 4, GOLD));
+        sidebar.setPreferredSize(new Dimension(240, 10));
+
+        navMenuLink = navLinkVertical("Menu", true, cerrarYLuego(this::irAMenuPrincipal));
+        sidebar.add(navMenuLink);
+        sidebar.add(navLinkVertical("Promociones & Apps", false, null));
+        sidebar.add(navLinkVertical("Cajita Feliz", false, cerrarYLuego(this::irACajitaFeliz)));
+        navCarritoLink = navLinkVertical("Carrito", false, cerrarYLuego(this::irACarrito));
+        sidebar.add(navCarritoLink);
+
+        // esto empuja el boton de cerrar sesion hasta el fondo de la barra
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(buildBotonCerrarSesion());
+
+        return sidebar;
+    }
+
+    // boton de cerrar sesion, hasta abajo de la barra lateral. cierra esta
+    // ventana y abre el login otra vez
+    private JLabel buildBotonCerrarSesion() {
+        JLabel link = new JLabel("Cerrar sesion");
+        link.setFont(FONT_NAV);
+        link.setOpaque(true);
+        link.setBorder(new EmptyBorder(18, 22, 18, 22));
+        link.setAlignmentX(Component.LEFT_ALIGNMENT);
+        link.setMaximumSize(new Dimension(Integer.MAX_VALUE, link.getMaximumSize().height));
+        link.setBackground(RED);
+        link.setForeground(CREAM);
+        link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        link.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                dispose();
+                new Login().setVisible(true);
+            }
+            @Override public void mouseEntered(MouseEvent e) {
+                link.setBackground(GOLD);
+                link.setForeground(BROWN_950);
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                link.setBackground(RED);
+                link.setForeground(CREAM);
+            }
+        });
+        return link;
+    }
+
+    // envuelve la accion para que primero cierre la barra y despues navegue
+    private Runnable cerrarYLuego(Runnable accion) {
+        return () -> {
+            toggleSidebar();
+            if (accion != null) {
+                accion.run();
+            }
+        };
+    }
+
+    // abre o cierra la barra lateral segun como este en ese momento
+    private void toggleSidebar() {
+        Container raiz = getContentPane();
+        if (sidebarVisible) {
+            raiz.remove(sidebar);
+            sidebarVisible = false;
+        } else {
+            raiz.add(sidebar, BorderLayout.WEST);
+            sidebarVisible = true;
+        }
+        raiz.revalidate();
+        raiz.repaint();
+    }
+
+    private JLabel navLinkVertical(String text, boolean active, Runnable onClick) {
+        JLabel link = new JLabel(text);
+        link.setFont(FONT_NAV);
+        link.setOpaque(true);
+        link.setBorder(new EmptyBorder(18, 22, 18, 22));
+        link.setAlignmentX(Component.LEFT_ALIGNMENT);
+        link.setMaximumSize(new Dimension(Integer.MAX_VALUE, link.getMaximumSize().height));
+        // antes "Menu" se quedaba amarillo siempre por lo del active, ya no.
+        // ahora todas arrancan igual (marron) y el amarillo solo sale con el mouse encima
+        link.setBackground(MAROON);
+        link.setForeground(CREAM_2);
+
+        // el resaltado en amarillo va en cualquiera de las opciones, tenga
+        // o no accion asignada (asi se ve parejo pasando el mouse por todas)
+        link.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                link.setBackground(GOLD);
+                link.setForeground(BROWN_950);
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                link.setBackground(MAROON);
+                link.setForeground(CREAM_2);
+            }
+        });
+
+        if (onClick != null) {
+            link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            link.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) { onClick.run(); }
+            });
+        }
+        return link;
     }
 
     private JLabel navLink(String text, boolean active, Runnable onClick) {
@@ -356,8 +450,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         hero.setBorder(new EmptyBorder(56, 32, 74, 32));
         hero.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // el texto lo meti en un panel aparte pegado a la izquierda pq si no
-        // se me centraba solo y no hallaba por que asi que mejor asi quedo
         JPanel contenido = new JPanel();
         contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
         contenido.setOpaque(false);
@@ -373,8 +465,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
         eyebrow.setMaximumSize(eyebrow.getPreferredSize());
 
-        // el titulo con lo del span de color lo hago con font color en html
-        // pq asi si me lo pinta bien de dos colores la etiqueta
         JLabel h1 = new JLabel("<html><div style='width:520px'>66 millones de años de "
                 + "<font color='#e2a35a'>sabor</font>, listo en minutos.</div></html>");
         h1.setFont(FONT_H1);
@@ -388,15 +478,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         p.setBorder(new EmptyBorder(0, 0, 24, 0));
         p.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        BotonAmbar btnVerMenu = new BotonAmbar("Ver el menu completo");
-        btnVerMenu.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnVerMenu.addActionListener(e -> {
-            if (gridCategoriasPanel != null) {
-                gridCategoriasPanel.scrollRectToVisible(new Rectangle(0, 0, 10, 10));
-            }
-        });
-
-        // las huellitas que van bajando hacia las categorias, puro adorno
         JPanel huellas = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 0));
         huellas.setOpaque(false);
         huellas.setBorder(new EmptyBorder(30, 0, 0, 0));
@@ -412,15 +493,12 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         contenido.add(eyebrow);
         contenido.add(h1);
         contenido.add(p);
-        contenido.add(btnVerMenu);
         contenido.add(huellas);
 
         hero.add(contenido, BorderLayout.WEST);
         return hero;
     }
 
-    // el fondo del hero, con degradado tipo roca, brillo de ambar y el
-    // borde rasgado abajo pa que no quede una linea recta y aburrida
     static class HeroPanel extends JPanel {
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -442,8 +520,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
             g2.setPaint(brillo);
             g2.fillRect(0, 0, w, h);
 
-            // franja rasgada abajo, como si fuera roca partida, del color
-            // que sigue despues (CREAM) para que se vea la transicion
             int franjaAlto = 46;
             Random rnd = new Random(7);
             Path2D.Double borde = new Path2D.Double();
@@ -464,7 +540,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // dibujita de huellita de dinosaurio, para el hero nomas
     private Icon crearIconoHuella(int w, int h, float alfa) {
         return new Icon() {
             public int getIconWidth() { return w; }
@@ -488,9 +563,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         JPanel wrap = new JPanel(new BorderLayout());
         wrap.setBackground(CREAM);
         wrap.setBorder(new EmptyBorder(10, 32, 60, 32));
-        // esto es lo que le faltaba: si no le pongo el mismo alignmentX que
-        // el hero, el BoxLayout hace un ajuste raro entre los dos paneles y
-        // el hero queda angosto y pegado a la derecha en vez de ocupar todo
         wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
         gridCategoriasPanel = wrap;
 
@@ -518,7 +590,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         JPanel card = new TarjetaCategoria(new BorderLayout(22, 0));
         card.setBackground(Color.WHITE);
 
-        // el borde normal y el que sale cuando pasas el mouse, para el resaltado
         Border bordeNormal = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CREAM_2, 2, true),
                 new EmptyBorder(22, 22, 22, 22));
@@ -528,7 +599,15 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         card.setBorder(bordeNormal);
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        card.add(placeholderImagen(120, 120, rutaImagen), BorderLayout.WEST);
+        // ojo: si pones la imagen directo en BorderLayout.WEST, el propio
+        // BorderLayout la estira para llenar TODO el alto de la tarjeta y
+        // se ve rarisima (por eso las fotos reales se veian estiradas hasta
+        // el pie de pagina). con este panelito de FlowLayout alrededor, la
+        // imagen se queda fija en su tamano de siempre sin que la estiren
+        JPanel imgWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        imgWrap.setOpaque(false);
+        imgWrap.add(placeholderImagen(120, 120, rutaImagen));
+        card.add(imgWrap, BorderLayout.WEST);
 
         JPanel textPanel = new JPanel();
         textPanel.setOpaque(false);
@@ -669,8 +748,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         return new ImagePlaceholder(w, h, rutaImagen);
     }
 
-    // ya no le pongo el texto "Imagen aqui" cuando SI hay foto real,
-    // solo cuando todavia no se ha asignado ninguna imagen al producto
     private JComponent placeholderImagenConTexto(int w, int h, String texto) {
         return placeholderImagenConTexto(w, h, texto, null);
     }
@@ -696,10 +773,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         return wrap;
     }
 
-    // el recuadro pa las fotos: si el producto trae "imagen" y el archivo
-    // existe en /imagenes/ lo pinta de una vez; si no lo encuentra (o el
-    // producto todavia no tiene foto asignada), cae al dibujito de
-    // placeholder de siempre pa que nunca truene por una imagen faltante
     static class ImagePlaceholder extends JComponent {
         private final int w, h;
         private Image imagen;
@@ -727,15 +800,18 @@ private void registrarVenta(String metodoPagoSeleccionado) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+            // uso el tamano real que tiene el componente en pantalla
+            // (getWidth/getHeight) en vez de los w,h fijos del constructor,
+            // por si algun layout lo llega a estirar como paso con lo del
+            // BorderLayout de las categorias
+            int wReal = getWidth();
+            int hReal = getHeight();
+
             if (imagen != null) {
-                // fondo blanco + recorte con esquinas redondeadas, pa que
-                // las fotos con fondo transparente no se vean con bordes feos
-                g2.setClip(new RoundRectangle2D.Float(0, 0, w, h, 14, 14));
+                g2.setClip(new RoundRectangle2D.Float(0, 0, wReal, hReal, 14, 14));
                 g2.setColor(Color.WHITE);
-                g2.fillRect(0, 0, w, h);
-                // el drawImage con ImageObserver "this" hace que repinte solo
-                // cuando la imagen ya termino de cargar (por si tarda un toque)
-                g2.drawImage(imagen, 0, 0, w, h, this);
+                g2.fillRect(0, 0, wReal, hReal);
+                g2.drawImage(imagen, 0, 0, wReal, hReal, this);
                 g2.dispose();
                 return;
             }
@@ -769,7 +845,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // panel con las esquinas redondas, lo usan otras pantallas tambien no borrar
     static class RoundedPanel extends JPanel {
         private final int radius;
         private final Color fill;
@@ -793,9 +868,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // efecto de derretido, como si fuera queso o miel goteando desde
-    // arriba del panel. mismo cuento del timer que usabamos pa la garra
-    // pero mas lento pa que se vea como que va cayendo poco a poco
     static class DerretidoHover extends MouseAdapter {
         private final Component objetivo;
         private double progreso = 0.0;
@@ -833,7 +905,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // dibuja la franjita arriba y las gotas colgando, tipo queso derretido
     private static void pintarDerretido(Graphics2D g2base, int width, int height, double progreso) {
         if (progreso <= 0.001) {
             return;
@@ -844,8 +915,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
 
         int franjaAlto = (int) (10 * progreso);
 
-        // semilla fija segun el tamaño del panel pa que el goteo no ande
-        // cambiando de forma cada vez que se repinta
         long semilla = width * 31L + height;
         Random rnd = new Random(semilla);
 
@@ -874,7 +943,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         g2.dispose();
     }
 
-    // tarjeta de categoria con el goteo encima al pasar el mouse
     static class TarjetaCategoria extends JPanel {
         private final DerretidoHover hover;
         TarjetaCategoria(LayoutManager layout) {
@@ -888,7 +956,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // tarjeta de producto, mismo goteo
     static class TarjetaProducto extends JPanel {
         private final DerretidoHover hover;
         TarjetaProducto() {
@@ -901,8 +968,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // este es el boton nuevo, con degradado ambar como si fuera resina
-    // fosilizada en vez de un color plano, para agregar y para seguir comprando
     static class BotonAmbar extends JButton {
         BotonAmbar(String texto) {
             super(texto);
@@ -923,7 +988,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
             g2.setPaint(resina);
             g2.fillRoundRect(0, 0, w, h, 9, 9);
 
-            // una franjita mas clara arriba como brillo del ambar
             g2.setColor(new Color(255, 255, 255, 55));
             g2.fillRoundRect(3, 3, w - 6, h / 2 - 2, 7, 7);
 
@@ -1094,97 +1158,95 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         navCarritoLink.setText(carrito.isEmpty() ? "Carrito" : "Carrito (" + carrito.size() + ")");
     }
 
-    // pantalla del carrito, aca se ve todo lo que a agregado el cliente
-   private void irACarrito() {
-    categoriaContenedor.removeAll();
+    private void irACarrito() {
+        categoriaContenedor.removeAll();
 
-    categoriaContenedor.add(buildBreadcrumb("Carrito"));
-    categoriaContenedor.add(buildTituloCategoria("Tu Carrito"));
+        categoriaContenedor.add(buildBreadcrumb("Carrito"));
+        categoriaContenedor.add(buildTituloCategoria("Tu Carrito"));
 
-    if (carrito.isEmpty()) {
-        JLabel vacio = new JLabel("Aun no has agregado productos a tu carrito.");
-        vacio.setFont(FONT_SUB);
-        vacio.setForeground(INK_SOFT);
-        vacio.setBorder(new EmptyBorder(0, 32, 20, 32));
-        vacio.setAlignmentX(Component.LEFT_ALIGNMENT);
-        categoriaContenedor.add(vacio);
-    } else {
-        JPanel lista = new JPanel();
-        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
-        lista.setOpaque(false);
-        lista.setBorder(new EmptyBorder(0, 32, 10, 32));
-        lista.setAlignmentX(Component.LEFT_ALIGNMENT);
+        if (carrito.isEmpty()) {
+            JLabel vacio = new JLabel("Aun no has agregado productos a tu carrito.");
+            vacio.setFont(FONT_SUB);
+            vacio.setForeground(INK_SOFT);
+            vacio.setBorder(new EmptyBorder(0, 32, 20, 32));
+            vacio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            categoriaContenedor.add(vacio);
+        } else {
+            JPanel lista = new JPanel();
+            lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
+            lista.setOpaque(false);
+            lista.setBorder(new EmptyBorder(0, 32, 10, 32));
+            lista.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        double total = 0;
-        for (ItemPedido item : new ArrayList<>(carrito)) {
-            JPanel fila = buildFilaCarrito(item);
-            fila.setAlignmentX(Component.LEFT_ALIGNMENT);
-            lista.add(fila);
-            lista.add(Box.createVerticalStrut(12));
-            total += item.precio;
+            double total = 0;
+            for (ItemPedido item : new ArrayList<>(carrito)) {
+                JPanel fila = buildFilaCarrito(item);
+                fila.setAlignmentX(Component.LEFT_ALIGNMENT);
+                lista.add(fila);
+                lista.add(Box.createVerticalStrut(12));
+                total += item.precio;
+            }
+            categoriaContenedor.add(lista);
+
+            JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            totalPanel.setOpaque(false);
+            totalPanel.setBorder(new EmptyBorder(6, 32, 20, 32));
+            totalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            JLabel lblTotal = new JLabel("Total: " + formatoPrecio(total));
+            lblTotal.setFont(new Font("SansSerif", Font.BOLD, 22));
+            lblTotal.setForeground(BROWN_950);
+            totalPanel.add(lblTotal);
+            categoriaContenedor.add(totalPanel);
+
+            JPanel pagoPanel = new JPanel();
+            pagoPanel.setOpaque(false);
+            pagoPanel.setLayout(new BoxLayout(pagoPanel, BoxLayout.Y_AXIS));
+            pagoPanel.setBorder(new EmptyBorder(0, 32, 20, 32));
+            pagoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JLabel lblMetodo = new JLabel("Metodo de pago:");
+            lblMetodo.setFont(new Font("SansSerif", Font.BOLD, 14));
+            lblMetodo.setForeground(BROWN_950);
+            lblMetodo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JComboBox<String> cbMetodoPago = new JComboBox<>();
+            for (String nombre : metodosPagoMap.keySet()) {
+                cbMetodoPago.addItem(nombre);
+            }
+            cbMetodoPago.setFont(FONT_SUB);
+            cbMetodoPago.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cbMetodoPago.setMaximumSize(new Dimension(240, 36));
+
+            pagoPanel.add(lblMetodo);
+            pagoPanel.add(Box.createVerticalStrut(6));
+            pagoPanel.add(cbMetodoPago);
+            categoriaContenedor.add(pagoPanel);
+
+            JButton btnConfirmar = new BotonAmbar("Confirmar pedido");
+            btnConfirmar.addActionListener(e -> registrarVenta((String) cbMetodoPago.getSelectedItem()));
+
+            JPanel confirmarWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            confirmarWrap.setOpaque(false);
+            confirmarWrap.setBorder(new EmptyBorder(0, 32, 20, 32));
+            confirmarWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+            confirmarWrap.add(btnConfirmar);
+            categoriaContenedor.add(confirmarWrap);
         }
-        categoriaContenedor.add(lista);
 
-        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        totalPanel.setOpaque(false);
-        totalPanel.setBorder(new EmptyBorder(6, 32, 20, 32));
-        totalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel lblTotal = new JLabel("Total: " + formatoPrecio(total));
-        lblTotal.setFont(new Font("SansSerif", Font.BOLD, 22));
-        lblTotal.setForeground(BROWN_950);
-        totalPanel.add(lblTotal);
-        categoriaContenedor.add(totalPanel);
+        JButton btnSeguir = new BotonAmbar("Seguir comprando");
+        btnSeguir.addActionListener(e -> irAMenuPrincipal());
 
-        // ===== metodo de pago + boton de confirmar =====
-        JPanel pagoPanel = new JPanel();
-        pagoPanel.setOpaque(false);
-        pagoPanel.setLayout(new BoxLayout(pagoPanel, BoxLayout.Y_AXIS));
-        pagoPanel.setBorder(new EmptyBorder(0, 32, 20, 32));
-        pagoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel botonWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        botonWrap.setOpaque(false);
+        botonWrap.setBorder(new EmptyBorder(0, 32, 40, 32));
+        botonWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botonWrap.add(btnSeguir);
+        categoriaContenedor.add(botonWrap);
 
-        JLabel lblMetodo = new JLabel("Metodo de pago:");
-        lblMetodo.setFont(new Font("SansSerif", Font.BOLD, 14));
-        lblMetodo.setForeground(BROWN_950);
-        lblMetodo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JComboBox<String> cbMetodoPago = new JComboBox<>();
-        for (String nombre : metodosPagoMap.keySet()) {
-            cbMetodoPago.addItem(nombre);
-        }
-        cbMetodoPago.setFont(FONT_SUB);
-        cbMetodoPago.setAlignmentX(Component.LEFT_ALIGNMENT);
-        cbMetodoPago.setMaximumSize(new Dimension(240, 36));
-
-        pagoPanel.add(lblMetodo);
-        pagoPanel.add(Box.createVerticalStrut(6));
-        pagoPanel.add(cbMetodoPago);
-        categoriaContenedor.add(pagoPanel);
-
-        JButton btnConfirmar = new BotonAmbar("Confirmar pedido");
-        btnConfirmar.addActionListener(e -> registrarVenta((String) cbMetodoPago.getSelectedItem()));
-
-        JPanel confirmarWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        confirmarWrap.setOpaque(false);
-        confirmarWrap.setBorder(new EmptyBorder(0, 32, 20, 32));
-        confirmarWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-        confirmarWrap.add(btnConfirmar);
-        categoriaContenedor.add(confirmarWrap);
+        categoriaContenedor.revalidate();
+        categoriaContenedor.repaint();
+        mostrarCategoriaEnScroll();
     }
-
-    JButton btnSeguir = new BotonAmbar("Seguir comprando");
-    btnSeguir.addActionListener(e -> irAMenuPrincipal());
-
-    JPanel botonWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-    botonWrap.setOpaque(false);
-    botonWrap.setBorder(new EmptyBorder(0, 32, 40, 32));
-    botonWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-    botonWrap.add(btnSeguir);
-    categoriaContenedor.add(botonWrap);
-
-    categoriaContenedor.revalidate();
-    categoriaContenedor.repaint();
-    mostrarCategoriaEnScroll();
-}
 
     private JPanel buildFilaCarrito(ItemPedido item) {
         JPanel fila = new JPanel(new BorderLayout(14, 0));
@@ -1251,8 +1313,7 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         final String descripcion;
         final double precio;
         final boolean permiteCombo;
-
-        final String imagen; // ruta dentro de /imagenes/, ej: "comida/hamburguesas/bigmac.png". null = sin foto todavia
+        final String imagen;
 
         Producto(String nombre, String descripcion, double precio) {
             this(nombre, descripcion, precio, false, null);
@@ -1285,7 +1346,6 @@ private void registrarVenta(String metodoPagoSeleccionado) {
         }
     }
 
-    // aqui abajo estan todos los presios y nombres de la comida, son un chorro
     private static List<Producto> productosDesayunos() {
         return Arrays.asList(
             new Producto("Huevos Jurasicos", "Dos huevos revueltos estilo rancho con jamon y queso derretido.", 32),

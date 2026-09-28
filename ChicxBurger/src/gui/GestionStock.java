@@ -12,12 +12,12 @@ import ChicxBurgerDB.IngredienteDAO;
 
 public class GestionStock extends JFrame {
 
-    Color ROJO = Color.decode("#f53418");
-    Color NARANJA = Color.decode("#f6781c");
-    Color MOSTAZA = Color.decode("#a28813");
-    Color DORADO = Color.decode("#db8f1b");
-    Color BEIGE = Color.decode("#e0cfc8");
-    Color CAFE = Color.decode("#661d05");
+    Color ROJO = Chiksxburgermenu.RED;
+    Color NARANJA = Chiksxburgermenu.AMBAR;
+    Color MOSTAZA = Chiksxburgermenu.GOLD_DEEP;
+    Color DORADO = Chiksxburgermenu.AMBAR_CLARO;
+    Color BEIGE = Chiksxburgermenu.CREAM;
+    Color CAFE = Chiksxburgermenu.BROWN_950;
 
     JTextField txtNombre, txtUnidad, txtStockActual, txtStockMinimo, txtBuscar;
     JComboBox<String> cbProveedor;
@@ -29,38 +29,46 @@ public class GestionStock extends JFrame {
     HashMap<String, Integer> proveedoresMap = new HashMap<>();
     int idSeleccionado = -1;
 
+    // barra lateral que sale del logo, empieza escondida
+    private JPanel sidebar;
+    private boolean sidebarVisible = false;
+
     public GestionStock() {
 
-        setTitle("Chiksx Burger - Gestion de Stock");
+        setTitle("ChicxBurger - Gestion de Stock");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+        sidebar = EstiloAdmin.construirBarraLateral();
 
         JPanel principal = new JPanel(new BorderLayout());
         principal.setBackground(BEIGE);
 
         JPanel encabezado = new JPanel(new BorderLayout());
-        encabezado.setBackground(Color.WHITE);
-        encabezado.setBorder(new EmptyBorder(15, 30, 15, 30));
+        encabezado.setBackground(Chiksxburgermenu.MAROON);
+        encabezado.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 4, 0, Chiksxburgermenu.GOLD),
+                new EmptyBorder(15, 30, 15, 30)
+        ));
+
+        JPanel logoFila = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        logoFila.setOpaque(false);
+        JLabel mark = new JLabel(EstiloAdmin.crearIconoLogo(34, Chiksxburgermenu.GOLD, Chiksxburgermenu.BROWN_950));
+        mark.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        mark.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { toggleSidebar(); }
+        });
+        logoFila.add(mark);
+        JLabel logo = new JLabel("CHICXBURGER");
+        logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        logo.setForeground(Chiksxburgermenu.CREAM);
+        logoFila.add(logo);
+        encabezado.add(logoFila, BorderLayout.WEST);
 
         JLabel titulo = new JLabel("Gestion de Stock");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 25));
-        titulo.setForeground(CAFE);
-
-        JLabel subtitulo = new JLabel("Administra los ingredientes e inventario");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitulo.setForeground(Color.GRAY);
-
-        JPanel textos = new JPanel();
-        textos.setBackground(Color.WHITE);
-        textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
-        textos.add(titulo);
-        textos.add(subtitulo);
-        encabezado.add(textos, BorderLayout.WEST);
-
-        JLabel logo = new JLabel("CHIKSX BURGER");
-        logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        logo.setForeground(ROJO);
-        encabezado.add(logo, BorderLayout.EAST);
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titulo.setForeground(Chiksxburgermenu.GOLD);
+        encabezado.add(titulo, BorderLayout.EAST);
 
         principal.add(encabezado, BorderLayout.NORTH);
 
@@ -314,14 +322,23 @@ public class GestionStock extends JFrame {
         return panel;
     }
 
+    // abre o cierra la barra lateral segun como este en ese momento
+    private void toggleSidebar() {
+        Container raiz = getContentPane();
+        if (sidebarVisible) {
+            raiz.remove(sidebar);
+            sidebarVisible = false;
+        } else {
+            raiz.add(sidebar, BorderLayout.WEST);
+            sidebarVisible = true;
+        }
+        raiz.revalidate();
+        raiz.repaint();
+    }
+
     private JButton crearBoton(String texto, Color color) {
-        JButton boton = new JButton(texto);
-        boton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        boton.setForeground(Color.WHITE);
-        boton.setBackground(color);
-        boton.setFocusPainted(false);
+        EstiloAdmin.BotonSolido boton = new EstiloAdmin.BotonSolido(texto, color, Color.WHITE);
         boton.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return boton;
     }
 
