@@ -9,6 +9,8 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
 import java.sql.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,6 +56,15 @@ public class Chiksxburgermenu extends JFrame {
     // barra lateral que sale del logo, empieza escondida
     private JPanel sidebar;
     private boolean sidebarVisible = false;
+
+    // reloj de arriba y control de horario de desayunos/almuerzos
+    private JLabel lblHora;
+    private boolean desayunosHabilitado = true;
+    private boolean almuerzosHabilitado = true;
+    private JPanel cardDesayunosRef;
+    private JPanel cardAlmuerzosRef;
+    private JLabel estadoDesayunosLbl;
+    private JLabel estadoAlmuerzosLbl;
 
     private final List<ItemPedido> carrito = new ArrayList<>();
     private final int idUsuarioActual;
@@ -105,6 +116,38 @@ public class Chiksxburgermenu extends JFrame {
         root.add(buildFooter(), BorderLayout.SOUTH);
 
         setContentPane(root);
+
+        // el reloj arranca aqui, ya con todo armado (header y tarjetas listos)
+        actualizarReloj();
+        Timer timerReloj = new Timer(1000, e -> actualizarReloj());
+        timerReloj.start();
+    }
+
+    // se llama cada segundo: actualiza la hora que se ve arriba y revisa si
+    // toca prender/apagar desayunos y almuerzos segun la hora actual
+    private void actualizarReloj() {
+        LocalTime ahora = LocalTime.now();
+        lblHora.setText(ahora.format(DateTimeFormatter.ofPattern("hh:mm:ss a")));
+
+        boolean horarioDesayuno = !ahora.isBefore(LocalTime.of(6, 0)) && ahora.isBefore(LocalTime.of(11, 0));
+
+        desayunosHabilitado = horarioDesayuno;
+        almuerzosHabilitado = !horarioDesayuno;
+
+        if (estadoDesayunosLbl != null) {
+            estadoDesayunosLbl.setText(desayunosHabilitado ? " " : "Disponible de 6:00 a 11:00 am");
+        }
+        if (estadoAlmuerzosLbl != null) {
+            estadoAlmuerzosLbl.setText(almuerzosHabilitado ? " " : "Disponible despues de las 11:00 am");
+        }
+        if (cardDesayunosRef != null) {
+            cardDesayunosRef.setCursor(Cursor.getPredefinedCursor(
+                    desayunosHabilitado ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+        }
+        if (cardAlmuerzosRef != null) {
+            cardAlmuerzosRef.setCursor(Cursor.getPredefinedCursor(
+                    almuerzosHabilitado ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+        }
     }
 
     private void irAMenuPrincipal() {
@@ -289,7 +332,14 @@ public class Chiksxburgermenu extends JFrame {
         logoPanel.add(logoText);
 
         header.add(logoPanel, BorderLayout.WEST);
-        // ya no va nada del lado derecho, esas opciones ahora viven en la barra lateral
+
+        // el reloj de arriba a la derecha, se va actualizando solo cada segundo
+        lblHora = new JLabel();
+        lblHora.setFont(new Font("SansSerif", Font.BOLD, 15));
+        lblHora.setForeground(GOLD);
+        lblHora.setBorder(new EmptyBorder(0, 0, 0, 30));
+        header.add(lblHora, BorderLayout.EAST);
+
         return header;
     }
 
@@ -375,13 +425,9 @@ public class Chiksxburgermenu extends JFrame {
         link.setBorder(new EmptyBorder(18, 22, 18, 22));
         link.setAlignmentX(Component.LEFT_ALIGNMENT);
         link.setMaximumSize(new Dimension(Integer.MAX_VALUE, link.getMaximumSize().height));
-        // antes "Menu" se quedaba amarillo siempre por lo del active, ya no.
-        // ahora todas arrancan igual (marron) y el amarillo solo sale con el mouse encima
         link.setBackground(MAROON);
         link.setForeground(CREAM_2);
 
-        // el resaltado en amarillo va en cualquiera de las opciones, tenga
-        // o no accion asignada (asi se ve parejo pasando el mouse por todas)
         link.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
                 link.setBackground(GOLD);
@@ -569,24 +615,51 @@ public class Chiksxburgermenu extends JFrame {
         JPanel grid = new JPanel(new GridLayout(0, 3, 20, 20));
         grid.setBackground(CREAM);
 
-        grid.add(buildCardCategoria("Desayunos", "20 platillos para empezar el dia", "comida/desayunos/hotcakes_triceratops.png",
-                () -> irACategoria("Desayunos", productosDesayunos())));
-        grid.add(buildCardCategoria("Almuerzos y cenas", "Hamburguesas y pollo", "comida/hamburguesas/bigmac.png",
-                () -> irACategoria("Almuerzos y Cenas", productosAlmuerzos())));
+        JPanel cardDesayunos = buildCardCategoria("Desayunos", "20 platillos para empezar el dia", "comida/desayunos/hotcakes_triceratops.png",
+                () -> {
+                    if (!desayunosHabilitado) {
+                        JOptionPane.showMessageDialog(this,
+                                "Los desayunos solo estan disponibles de 6:00 a 11:00 am.",
+                                "No disponible", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    irACategoria("Desayunos", productosDesayunos());
+                }, true);
+        cardDesayunosRef = cardDesayunos;
+        estadoDesayunosLbl = (JLabel) cardDesayunos.getClientProperty("estadoLbl");
+        grid.add(cardDesayunos);
+
+        JPanel cardAlmuerzos = buildCardCategoria("Almuerzos y cenas", "Hamburguesas y pollo", "comida/hamburguesas/bigmac.png",
+                () -> {
+                    if (!almuerzosHabilitado) {
+                        JOptionPane.showMessageDialog(this,
+                                "Los almuerzos y cenas estan disponibles despues de las 11:00 am.",
+                                "No disponible", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    irACategoria("Almuerzos y Cenas", productosAlmuerzos());
+                }, true);
+        cardAlmuerzosRef = cardAlmuerzos;
+        estadoAlmuerzosLbl = (JLabel) cardAlmuerzos.getClientProperty("estadoLbl");
+        grid.add(cardAlmuerzos);
+
         grid.add(buildCardCategoria("Postres", "Dulce final", null,
-                () -> irACategoria("Postres", productosPostres())));
+                () -> irACategoria("Postres", productosPostres()), false));
         grid.add(buildCardCategoria("Bebidas", "Frias y calientes", "comida/bebidas/limonada_raptor.png",
-                () -> irACategoria("Bebidas", productosBebidas())));
+                () -> irACategoria("Bebidas", productosBebidas()), false));
         grid.add(buildCardCategoria("Antojos", "Papas y snacks", "comida/pollo/10_mcnuggets_de_pollo.png",
-                () -> irACategoria("Antojos", productosAntojos())));
+                () -> irACategoria("Antojos", productosAntojos()), false));
         grid.add(buildCardCategoria("Cajita Feliz", "Hamburguesa o Nuggets", "comida/cajitas/cajita_mini_rex.png",
-                this::irACajitaFeliz));
+                this::irACajitaFeliz, false));
 
         wrap.add(grid, BorderLayout.CENTER);
         return wrap;
     }
 
-    private JPanel buildCardCategoria(String label, String tag, String rutaImagen, Runnable onClick) {
+    // el ultimo parametro (conEstado) es para las tarjetas que necesitan
+    // mostrar un mensaje de horario abajo (desayunos y almuerzos). al resto
+    // no les pasa nada, se ven exactamente igual que siempre
+    private JPanel buildCardCategoria(String label, String tag, String rutaImagen, Runnable onClick, boolean conEstado) {
         JPanel card = new TarjetaCategoria(new BorderLayout(22, 0));
         card.setBackground(Color.WHITE);
 
@@ -599,11 +672,6 @@ public class Chiksxburgermenu extends JFrame {
         card.setBorder(bordeNormal);
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // ojo: si pones la imagen directo en BorderLayout.WEST, el propio
-        // BorderLayout la estira para llenar TODO el alto de la tarjeta y
-        // se ve rarisima (por eso las fotos reales se veian estiradas hasta
-        // el pie de pagina). con este panelito de FlowLayout alrededor, la
-        // imagen se queda fija en su tamano de siempre sin que la estiren
         JPanel imgWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         imgWrap.setOpaque(false);
         imgWrap.add(placeholderImagen(120, 120, rutaImagen));
@@ -621,6 +689,16 @@ public class Chiksxburgermenu extends JFrame {
         textPanel.add(title);
         textPanel.add(Box.createVerticalStrut(3));
         textPanel.add(tagLbl);
+
+        if (conEstado) {
+            JLabel estadoLbl = new JLabel(" ");
+            estadoLbl.setFont(new Font("SansSerif", Font.BOLD, 11));
+            estadoLbl.setForeground(RED);
+            textPanel.add(Box.createVerticalStrut(4));
+            textPanel.add(estadoLbl);
+            card.putClientProperty("estadoLbl", estadoLbl);
+        }
+
         card.add(textPanel, BorderLayout.CENTER);
 
         card.addMouseListener(new MouseAdapter() {
@@ -800,10 +878,6 @@ public class Chiksxburgermenu extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // uso el tamano real que tiene el componente en pantalla
-            // (getWidth/getHeight) en vez de los w,h fijos del constructor,
-            // por si algun layout lo llega a estirar como paso con lo del
-            // BorderLayout de las categorias
             int wReal = getWidth();
             int hReal = getHeight();
 
