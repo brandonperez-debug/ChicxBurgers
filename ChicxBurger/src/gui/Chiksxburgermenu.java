@@ -83,7 +83,7 @@ public class Chiksxburgermenu extends JFrame {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(CREAM);
 
-        root.add(buildHero(), BorderLayout.NORTH);
+        root.add(buildHeader(), BorderLayout.NORTH);
         sidebar = buildSidebar();
 
         menuPrincipal = new JPanel();
@@ -255,44 +255,44 @@ public class Chiksxburgermenu extends JFrame {
         mostrarCategoriaEnScroll();
     }
 
-    
-// carga un png y lo escala a un alto fijo sin deformarlo
-private Icon cargarLogo(String ruta, int altoDeseado) {
-    java.awt.image.BufferedImage original = null;
-    try {
-        java.net.URL url = Chiksxburgermenu.class.getResource(ruta);
-        if (url != null) {
-            original = javax.imageio.ImageIO.read(url);
-        } else {
-            // plan B: buscarlo directo en la carpeta src del proyecto
-            java.io.File archivo = new java.io.File("src" + ruta);
-            if (archivo.exists()) {
-                original = javax.imageio.ImageIO.read(archivo);
-            } else {
-                System.out.println("NO se encontro el logo. Ruta: " + ruta
-                        + " | Carpeta de trabajo: " + System.getProperty("user.dir"));
+    private JPanel buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(MAROON);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 4, 0, GOLD));
+        header.setPreferredSize(new Dimension(10, 76));
+
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        logoPanel.setOpaque(false);
+        logoPanel.setBorder(new EmptyBorder(0, 28, 0, 0));
+
+        // este icono ahora es el botoncito que abre y cierra la barra lateral
+        JLabel mark = new JLabel(buildLogoIcon(40));
+        mark.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        mark.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                toggleSidebar();
             }
-        }
-    } catch (java.io.IOException e) {
-        System.out.println("Error leyendo el logo: " + e.getMessage());
+        });
+        logoPanel.add(mark);
+
+        JPanel logoText = new JPanel();
+        logoText.setOpaque(false);
+        logoText.setLayout(new BoxLayout(logoText, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("CHICXBURGER");
+        title.setFont(FONT_LOGO);
+        title.setForeground(CREAM);
+        JLabel subtitle = new JLabel("SABOR QUE ALIMENTA");
+        subtitle.setFont(new Font("SansSerif", Font.BOLD, 10));
+        subtitle.setForeground(GOLD);
+        logoText.add(title);
+        logoText.add(subtitle);
+        logoPanel.add(logoText);
+
+        header.add(logoPanel, BorderLayout.WEST);
+        // ya no va nada del lado derecho, esas opciones ahora viven en la barra lateral
+        return header;
     }
 
-    if (original == null) {
-        return buildLogoIcon(altoDeseado); // ultimo recurso: icono dibujado
-    }
-
-    int anchoNuevo = original.getWidth() * altoDeseado / original.getHeight();
-
-    java.awt.image.BufferedImage salida = new java.awt.image.BufferedImage(
-            anchoNuevo, altoDeseado, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-    Graphics2D g2 = salida.createGraphics();
-    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    g2.drawImage(original, 0, 0, anchoNuevo, altoDeseado, null);
-    g2.dispose();
-
-    return new ImageIcon(salida);
-}
     // la barra lateral, se agrega/quita del panel raiz cuando le dan click al logo
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel();
@@ -445,64 +445,59 @@ private Icon cargarLogo(String ruta, int altoDeseado) {
     }
 
     private JPanel buildHero() {
-    HeroPanel hero = new HeroPanel();
-    hero.setLayout(new BorderLayout());
-    hero.setBorder(new EmptyBorder(56, 32, 74, 32));
-    hero.setAlignmentX(Component.LEFT_ALIGNMENT);
+        HeroPanel hero = new HeroPanel();
+        hero.setLayout(new BorderLayout());
+        hero.setBorder(new EmptyBorder(56, 32, 74, 32));
+        hero.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    JPanel contenido = new JPanel();
-    contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
-    contenido.setOpaque(false);
+        JPanel contenido = new JPanel();
+        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
+        contenido.setOpaque(false);
 
-    JLabel eyebrow = new JLabel("  Recien desenterrado esta semana");
-    eyebrow.setFont(new Font("SansSerif", Font.BOLD, 12));
-    eyebrow.setForeground(AMBAR_CLARO);
-    eyebrow.setOpaque(true);
-    eyebrow.setBackground(BASALTO_2);
-    eyebrow.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(AMBAR.getRed(), AMBAR.getGreen(), AMBAR.getBlue(), 150), 1, true),
-            new EmptyBorder(6, 14, 6, 14)));
-    eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
-    eyebrow.setMaximumSize(eyebrow.getPreferredSize());
+        JLabel eyebrow = new JLabel("  Recien desenterrado esta semana");
+        eyebrow.setFont(new Font("SansSerif", Font.BOLD, 12));
+        eyebrow.setForeground(AMBAR_CLARO);
+        eyebrow.setOpaque(true);
+        eyebrow.setBackground(BASALTO_2);
+        eyebrow.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(AMBAR.getRed(), AMBAR.getGreen(), AMBAR.getBlue(), 150), 1, true),
+                new EmptyBorder(6, 14, 6, 14)));
+        eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        eyebrow.setMaximumSize(eyebrow.getPreferredSize());
 
-    JLabel h1 = new JLabel("<html><div style='width:520px'>66 millones de años de "
-            + "<font color='#e2a35a'>sabor</font>, listo en minutos.</div></html>");
-    h1.setFont(FONT_H1);
-    h1.setForeground(CREAM);
-    h1.setBorder(new EmptyBorder(16, 0, 10, 0));
-    h1.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel h1 = new JLabel("<html><div style='width:520px'>66 millones de años de "
+                + "<font color='#e2a35a'>sabor</font>, listo en minutos.</div></html>");
+        h1.setFont(FONT_H1);
+        h1.setForeground(CREAM);
+        h1.setBorder(new EmptyBorder(16, 0, 10, 0));
+        h1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    JLabel p = new JLabel("<html><div style='width:480px'>Cada platillo lleva el nombre de una especie distinta. Elige tu era, arma tu combo, y dejanos el resto.</div></html>");
-    p.setFont(FONT_SUB);
-    p.setForeground(CREAM_2);
-    p.setBorder(new EmptyBorder(0, 0, 24, 0));
-    p.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel p = new JLabel("<html><div style='width:480px'>Cada platillo lleva el nombre de una especie distinta. Elige tu era, arma tu combo, y dejanos el resto.</div></html>");
+        p.setFont(FONT_SUB);
+        p.setForeground(CREAM_2);
+        p.setBorder(new EmptyBorder(0, 0, 24, 0));
+        p.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    JPanel huellas = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 0));
-    huellas.setOpaque(false);
-    huellas.setBorder(new EmptyBorder(30, 0, 0, 0));
-    huellas.setAlignmentX(Component.LEFT_ALIGNMENT);
-    float[] alfas = {0.6f, 0.4f, 0.25f};
-    int[] corrimientos = {0, 12, 22};
-    for (int i = 0; i < 3; i++) {
-        JLabel pie = new JLabel(crearIconoHuella(22, 28, alfas[i]));
-        pie.setBorder(new EmptyBorder(corrimientos[i], 0, 0, 0));
-        huellas.add(pie);
+        JPanel huellas = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 0));
+        huellas.setOpaque(false);
+        huellas.setBorder(new EmptyBorder(30, 0, 0, 0));
+        huellas.setAlignmentX(Component.LEFT_ALIGNMENT);
+        float[] alfas = {0.6f, 0.4f, 0.25f};
+        int[] corrimientos = {0, 12, 22};
+        for (int i = 0; i < 3; i++) {
+            JLabel pie = new JLabel(crearIconoHuella(22, 28, alfas[i]));
+            pie.setBorder(new EmptyBorder(corrimientos[i], 0, 0, 0));
+            huellas.add(pie);
+        }
+
+        contenido.add(eyebrow);
+        contenido.add(h1);
+        contenido.add(p);
+        contenido.add(huellas);
+
+        hero.add(contenido, BorderLayout.WEST);
+        return hero;
     }
-
-    contenido.add(eyebrow);
-    contenido.add(h1);
-    contenido.add(p);
-    contenido.add(huellas);
-
-   hero.add(contenido, BorderLayout.WEST);
-
-    JLabel logoHero = new JLabel(cargarLogo("/imagenes/logo/chicxburgers.png", 220));
-    logoHero.setBorder(new EmptyBorder(0, 0, 0, 60));
-    hero.add(logoHero, BorderLayout.EAST);
-
-    return hero;
-}
 
     static class HeroPanel extends JPanel {
         @Override protected void paintComponent(Graphics g) {
@@ -574,13 +569,13 @@ private Icon cargarLogo(String ruta, int altoDeseado) {
         JPanel grid = new JPanel(new GridLayout(0, 3, 20, 20));
         grid.setBackground(CREAM);
 
-        grid.add(buildCardCategoria("Desayunos", "20 platillos para empezar el dia", null,
+        grid.add(buildCardCategoria("Desayunos", "20 platillos para empezar el dia", "comida/desayunos/hotcakes_triceratops.png",
                 () -> irACategoria("Desayunos", productosDesayunos())));
         grid.add(buildCardCategoria("Almuerzos y cenas", "Hamburguesas y pollo", "comida/hamburguesas/bigmac.png",
                 () -> irACategoria("Almuerzos y Cenas", productosAlmuerzos())));
         grid.add(buildCardCategoria("Postres", "Dulce final", null,
                 () -> irACategoria("Postres", productosPostres())));
-        grid.add(buildCardCategoria("Bebidas", "Frias y calientes", null,
+        grid.add(buildCardCategoria("Bebidas", "Frias y calientes", "comida/bebidas/limonada_raptor.png",
                 () -> irACategoria("Bebidas", productosBebidas())));
         grid.add(buildCardCategoria("Antojos", "Papas y snacks", "comida/pollo/10_mcnuggets_de_pollo.png",
                 () -> irACategoria("Antojos", productosAntojos())));
@@ -1353,21 +1348,36 @@ private Icon cargarLogo(String ruta, int altoDeseado) {
 
     private static List<Producto> productosDesayunos() {
         return Arrays.asList(
-            new Producto("Huevos Jurasicos", "Dos huevos revueltos estilo rancho con jamon y queso derretido.", 32),
-            new Producto("McMuffin T-Rex", "Pan muffin tostado con salchicha, huevo y queso cheddar.", 28),
-            new Producto("Croissant Pterodactilo", "Croissant relleno de jamon, huevo y queso suizo.", 34),
-            new Producto("Hotcakes Triceratops", "Tres hotcakes esponjosos con miel y mantequilla.", 30),
-            new Producto("Burrito Raptor", "Burrito de huevo, tocino, papas y pico de gallo.", 33),
-            new Producto("Bagel Estegosaurio", "Bagel tostado con queso crema, salmon y eneldo.", 36),
-            new Producto("Wrap Velociraptor", "Tortilla rellena de huevo, aguacate y tocino.", 31),
-            new Producto("Sandwich Braquiosaurio", "Pan artesanal con huevo, jamon de pavo y queso.", 35),
-            new Producto("Waffle Jurasico", "Waffle crocante con fresas y crema batida.", 32),
-            new Producto("Chilaquiles Cretacicos", "Chilaquiles rojos con pollo deshebrado y crema.", 38),
-            new Producto("Omelette Diplodocus", "Omelette de tres quesos con champinones y espinaca.", 34),
-            new Producto("Papas Rex con Huevo", "Papas doradas con huevo estrellado y salsa.", 29),
-            new Producto("Panque Fosil de Platano", "Rebanada de panque casero con miel de maple.", 22),
-            new Producto("Yogurt Prehistorico", "Yogurt natural con granola y frutos rojos.", 24),
-            new Producto("Combo Dino Huevo y Tocino", "Dos huevos al gusto con tocino crujiente y pan tostado.", 36)
+            new Producto("Huevos Jurasicos", "Dos huevos revueltos estilo rancho con jamon y queso derretido.", 32, false,
+                    "comida/desayunos/huevos_jurasicos.png"),
+            new Producto("McMuffin T-Rex", "Pan muffin tostado con salchicha, huevo y queso cheddar.", 28, false,
+                    "comida/desayunos/muffin_trex.png"),
+            new Producto("Croissant Pterodactilo", "Croissant relleno de jamon, huevo y queso suizo.", 34, false,
+                    "comida/desayunos/croissant_pterodactilo.png"),
+            new Producto("Hotcakes Triceratops", "Tres hotcakes esponjosos con miel y mantequilla.", 30, false,
+                    "comida/desayunos/hotcakes_triceratops.png"),
+            new Producto("Burrito Raptor", "Burrito de huevo, tocino, papas y pico de gallo.", 33, false,
+                    "comida/desayunos/burrito_raptor.png"),
+            new Producto("Bagel Estegosaurio", "Bagel tostado con queso crema, salmon y eneldo.", 36, false,
+                    "comida/desayunos/bagel_estegosaurio.png"),
+            new Producto("Wrap Velociraptor", "Tortilla rellena de huevo, aguacate y tocino.", 31, false,
+                    "comida/desayunos/wrap_velociraptor.png"),
+            new Producto("Sandwich Braquiosaurio", "Pan artesanal con huevo, jamon de pavo y queso.", 35, false,
+                    "comida/desayunos/sandwich_braquiosaurio.png"),
+            new Producto("Waffle Jurasico", "Waffle crocante con fresas y crema batida.", 32, false,
+                    "comida/desayunos/waffle_jurasico.png"),
+            new Producto("Chilaquiles Cretacicos", "Chilaquiles rojos con pollo deshebrado y crema.", 38, false,
+                    "comida/desayunos/chilaquiles_cretacicos.png"),
+            new Producto("Omelette Diplodocus", "Omelette de tres quesos con champinones y espinaca.", 34, false,
+                    "comida/desayunos/omelette_diplodocus.png"),
+            new Producto("Papas Rex con Huevo", "Papas doradas con huevo estrellado y salsa.", 29, false,
+                    "comida/desayunos/papas_rex_con_huevo.png"),
+            new Producto("Panque Fosil de Platano", "Rebanada de panque casero con miel de maple.", 22, false,
+                    "comida/desayunos/panque_fosil_de_platano.png"),
+            new Producto("Yogurt Prehistorico", "Yogurt natural con granola y frutos rojos.", 24, false,
+                    "comida/desayunos/yogurt_prehistorico.png"),
+            new Producto("Combo Dino Huevo y Tocino", "Dos huevos al gusto con tocino crujiente y pan tostado.", 36, false,
+                    "comida/desayunos/combo_dino_huevo_y_tocino.png")
         );
     }
 
@@ -1438,16 +1448,26 @@ private Icon cargarLogo(String ruta, int altoDeseado) {
 
     private static List<Producto> productosBebidas() {
         return Arrays.asList(
-            new Producto("Refresco Jurasico", "Refresco de cola bien frio.", 14),
-            new Producto("Limonada Raptor", "Limonada natural con hierbabuena.", 16),
-            new Producto("Te Helado Dino", "Te negro helado con limon.", 15),
-            new Producto("Cafe Fosil Americano", "Cafe negro recien preparado.", 14),
-            new Producto("Capuchino Cretacico", "Cafe espresso con leche espumada.", 20),
-            new Producto("Chocolate Caliente Rex", "Chocolate caliente cremoso.", 18),
-            new Producto("Agua Mineral Jurasica", "Agua mineral con gas.", 10),
-            new Producto("Jugo Natural de Naranja", "Jugo de naranja recien exprimido.", 16),
-            new Producto("Smoothie Dino de Fresa", "Smoothie cremoso de fresa natural.", 22),
-            new Producto("Malteada Triasica de Oreo", "Malteada cremosa con galleta de chocolate.", 24)
+            new Producto("Refresco Jurasico", "Refresco de cola bien frio.", 14, false,
+                    "comida/bebidas/refresco_jurasico.png"),
+            new Producto("Limonada Raptor", "Limonada natural con hierbabuena.", 16, false,
+                    "comida/bebidas/limonada_raptor.png"),
+            new Producto("Te Helado Dino", "Te negro helado con limon.", 15, false,
+                    "comida/bebidas/te_helado_dino.png"),
+            new Producto("Cafe Fosil Americano", "Cafe negro recien preparado.", 14, false,
+                    "comida/bebidas/cafe_fosil_americano.png"),
+            new Producto("Capuchino Cretacico", "Cafe espresso con leche espumada.", 20, false,
+                    "comida/bebidas/capuchino_cretacico.png"),
+            new Producto("Chocolate Caliente Rex", "Chocolate caliente cremoso.", 18, false,
+                    "comida/bebidas/chocolate_caliente_rex.png"),
+            new Producto("Agua Mineral Jurasica", "Agua mineral con gas.", 10, false,
+                    "comida/bebidas/agua_mineral_jurasica.png"),
+            new Producto("Jugo Natural de Naranja", "Jugo de naranja recien exprimido.", 16, false,
+                    "comida/bebidas/jugo_natural_de_naranja.png"),
+            new Producto("Smoothie Dino de Fresa", "Smoothie cremoso de fresa natural.", 22, false,
+                    "comida/bebidas/smoothie_dino_de_fresa.png"),
+            new Producto("Malteada Triasica de Oreo", "Malteada cremosa con galleta de chocolate.", 24, false,
+                    "comida/bebidas/malteada_triasica_de_oreo.png")
         );
     }
 
