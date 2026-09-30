@@ -643,11 +643,11 @@ public class Chiksxburgermenu extends JFrame {
         estadoAlmuerzosLbl = (JLabel) cardAlmuerzos.getClientProperty("estadoLbl");
         grid.add(cardAlmuerzos);
 
-        grid.add(buildCardCategoria("Postres", "Dulce final", null,
+        grid.add(buildCardCategoria("Postres", "Dulce final", "comida/postres/sundae_dino_rex.png",
                 () -> irACategoria("Postres", productosPostres()), false));
         grid.add(buildCardCategoria("Bebidas", "Frias y calientes", "comida/bebidas/limonada_raptor.png",
                 () -> irACategoria("Bebidas", productosBebidas()), false));
-        grid.add(buildCardCategoria("Antojos", "Papas y snacks", "comida/pollo/10_mcnuggets_de_pollo.png",
+        grid.add(buildCardCategoria("Antojos", "Papas y snacks", "comida/antojos/papas_fritas_rex.png",
                 () -> irACategoria("Antojos", productosAntojos()), false));
         grid.add(buildCardCategoria("Cajita Feliz", "Hamburguesa o Nuggets", "comida/cajitas/cajita_mini_rex.png",
                 this::irACajitaFeliz, false));
@@ -1502,21 +1502,36 @@ public class Chiksxburgermenu extends JFrame {
 
     private static List<Producto> productosPostres() {
         return Arrays.asList(
-            new Producto("Cono Volcan de Chocolate", "Cono suave banado en chocolate caliente.", 18),
-            new Producto("Malteada Jurasica", "Malteada cremosa de vainilla con topping de galleta.", 24),
-            new Producto("Pie Fosil de Manzana", "Pay de manzana caliente con canela.", 20),
-            new Producto("Sundae Dino Rex", "Helado de vainilla con jarabe de chocolate y nuez.", 19),
-            new Producto("Brownie Cretacico", "Brownie tibio con nuez y trozo de chocolate.", 22),
-            new Producto("Cheesecake Triasico", "Rebanada de cheesecake con salsa de fresa.", 28),
-            new Producto("Cono Clasico de Vainilla", "Cono suave sabor vainilla.", 12),
-            new Producto("Cono Clasico de Chocolate", "Cono suave sabor chocolate.", 12),
-            new Producto("Torbellino Oreo Dino", "Helado suave mezclado con trozos de galleta de chocolate.", 25),
-            new Producto("Paleta Prehistorica", "Paleta helada de fresa con chispas de colores.", 14),
-            new Producto("Dona Jurasica", "Dona glaseada con chispas de colores.", 16),
-            new Producto("Galleta Gigante Rex", "Galleta de chocolate recien horneada.", 15),
-            new Producto("Rollo Fosil de Canela", "Rollo de canela con glaseado dulce.", 18),
-            new Producto("Copa Cretacica de Frutas", "Mezcla de frutas frescas de temporada.", 20),
-            new Producto("Flan Casero Dino", "Flan napolitano con caramelo.", 19)
+            new Producto("Cono Volcan de Chocolate", "Cono suave banado en chocolate caliente.", 18, false,
+                    "comida/postres/cono_volcan_de_chocolate.png"),
+            new Producto("Malteada Jurasica", "Malteada cremosa de vainilla con topping de galleta.", 24, false,
+                    "comida/postres/malteada_jurasica.png"),
+            new Producto("Pie Fosil de Manzana", "Pay de manzana caliente con canela.", 20, false,
+                    "comida/postres/pie_fosil_de_manzana.png"),
+            new Producto("Sundae Dino Rex", "Helado de vainilla con jarabe de chocolate y nuez.", 19, false,
+                    "comida/postres/sundae_dino_rex.png"),
+            new Producto("Brownie Cretacico", "Brownie tibio con nuez y trozo de chocolate.", 22, false,
+                    "comida/postres/brownie_cretacico.png"),
+            new Producto("Cheesecake Triasico", "Rebanada de cheesecake con salsa de fresa.", 28, false,
+                    "comida/postres/cheesecake_triasico.png"),
+            new Producto("Cono Clasico de Vainilla", "Cono suave sabor vainilla.", 12, false,
+                    "comida/postres/cono_clasico_de_vainilla.png"),
+            new Producto("Cono Clasico de Chocolate", "Cono suave sabor chocolate.", 12, false,
+                    "comida/postres/cono_clasico_de_chocolate.png"),
+            new Producto("Torbellino Oreo Dino", "Helado suave mezclado con trozos de galleta de chocolate.", 25, false,
+                    "comida/postres/torbellino_oreo_dino.png"),
+            new Producto("Paleta Prehistorica", "Paleta helada de fresa con chispas de colores.", 14, false,
+                    "comida/postres/paleta_prehistorica.png"),
+            new Producto("Dona Jurasica", "Dona glaseada con chispas de colores.", 16, false,
+                    "comida/postres/dona_jurasica.png"),
+            new Producto("Galleta Gigante Rex", "Galleta de chocolate recien horneada.", 15, false,
+                    "comida/postres/galleta_gigante_rex.png"),
+            new Producto("Rollo Fosil de Canela", "Rollo de canela con glaseado dulce.", 18, false,
+                    "comida/postres/rollo_fosil_de_canela.png"),
+            new Producto("Copa Cretacica de Frutas", "Mezcla de frutas frescas de temporada.", 20, false,
+                    "comida/postres/copa_cretacica_de_frutas.png"),
+            new Producto("Flan Casero Dino", "Flan napolitano con caramelo.", 19, false,
+                    "comida/postres/flan_casero_dino.png")
         );
     }
 
@@ -1547,17 +1562,26 @@ public class Chiksxburgermenu extends JFrame {
 
     private static List<Producto> productosAntojos() {
         return Arrays.asList(
-            new Producto("Papas Fritas Rex", "Papas a la francesa crujientes.", 20),
-            new Producto("Papas Gajo Jurasicas", "Papas gajo sazonadas con especias.", 24),
-            new Producto("Aros de Cebolla Dino", "Aros de cebolla empanizados y crujientes.", 22),
+            new Producto("Papas Fritas Rex", "Papas a la francesa crujientes.", 20, false,
+                    "comida/antojos/papas_fritas_rex.png"),
+            new Producto("Papas Gajo Jurasicas", "Papas gajo sazonadas con especias.", 24, false,
+                    "comida/antojos/papas_gajo_jurasicas.png"),
+            new Producto("Aros de Cebolla Dino", "Aros de cebolla empanizados y crujientes.", 22, false,
+                    "comida/antojos/aros_de_cebolla_dino.png"),
             new Producto("Nuggets de Pollo Raptor", "Nuggets de pollo crujientes, 6 piezas.", 28, false,
                     "comida/pollo/pollo_mc_crispy_10_piezas.png"),
-            new Producto("Alitas BBQ Triceratops", "Alitas banadas en salsa BBQ.", 38),
-            new Producto("Alitas Picantes Velociraptor", "Alitas banadas en salsa picante.", 38),
-            new Producto("Quesadilla Fosil", "Quesadilla de queso derretido con tortilla de harina.", 26),
-            new Producto("Bastones de Queso Dino", "Bastones de queso mozzarella empanizados.", 24),
-            new Producto("Palomitas de Pollo Rex", "Trocitos de pollo empanizados estilo palomitas.", 27),
-            new Producto("Totopos Cretacicos con Queso", "Totopos banados en queso derretido.", 25)
+            new Producto("Alitas BBQ Triceratops", "Alitas banadas en salsa BBQ.", 38, false,
+                    "comida/antojos/alitas_bbq_triceratops.png"),
+            new Producto("Alitas Picantes Velociraptor", "Alitas banadas en salsa picante.", 38, false,
+                    "comida/antojos/alitas_picantes_velociraptor.png"),
+            new Producto("Quesadilla Fosil", "Quesadilla de queso derretido con tortilla de harina.", 26, false,
+                    "comida/antojos/quesadilla_fosil.png"),
+            new Producto("Bastones de Queso Dino", "Bastones de queso mozzarella empanizados.", 24, false,
+                    "comida/antojos/bastones_de_queso_dino.png"),
+            new Producto("Palomitas de Pollo Rex", "Trocitos de pollo empanizados estilo palomitas.", 27, false,
+                    "comida/antojos/palomitas_de_pollo_rex.png"),
+            new Producto("Totopos Cretacicos con Queso", "Totopos banados en queso derretido.", 25, false,
+                    "comida/antojos/totopos_cretacicos_con_queso.png")
         );
     }
 
